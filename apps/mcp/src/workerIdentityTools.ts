@@ -7,6 +7,16 @@ const credentials = {
   resumeToken: z.string().min(32).max(256),
 };
 
+const workerCapability = z.enum([
+  "code_execution",
+  "git",
+  "browser_automation",
+  "screenshot_capture",
+  "screen_recording",
+  "image_generation",
+  "visual_comparison",
+]);
+
 export function registerWorkerIdentityTools(server: McpServer) {
   server.registerTool(
     "register_worker",
@@ -17,16 +27,30 @@ export function registerWorkerIdentityTools(server: McpServer) {
         handle: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]*$/),
         displayName: z.string().min(1).max(120).optional(),
         clientType: z.enum(["codex", "claude", "other"]),
+        capabilities: z.array(workerCapability).max(7).default([]).describe("Advertise only capabilities available in this agent session. Queue routing will not assign work requiring an omitted capability."),
       },
     },
-    async ({ projectId, handle, displayName, clientType }) => textResult(await rest("/rpc/register_agent_worker", {
+    async ({ projectId, handle, displayName, clientType, capabilities }) => textResult(await rest("/rpc/register_agent_worker", {
       method: "POST",
       body: JSON.stringify({
         target_project_id: projectId,
         requested_handle: handle,
         requested_display_name: displayName ?? handle,
         requested_client_type: clientType,
+        requested_capabilities: capabilities,
       }),
+    })),
+  );
+
+  server.registerTool(
+    "update_worker_capabilities",
+    {
+      description: "Update the capabilities currently available to this authenticated worker. Capabilities required by an active claim cannot be removed.",
+      inputSchema: { ...credentials, capabilities: z.array(workerCapability).max(7) },
+    },
+    async ({ workerId, resumeToken, capabilities }) => textResult(await rest("/rpc/update_agent_worker_capabilities", {
+      method: "POST",
+      body: JSON.stringify({ target_worker_id: workerId, resume_token: resumeToken, requested_capabilities: capabilities }),
     })),
   );
 
@@ -52,9 +76,24 @@ export function registerWorkerIdentityTools(server: McpServer) {
   );
 
   server.registerTool(
+    "set_work_item_required_capabilities",
+    {
+      description: "Declare the native capabilities a feature, story, or task requires while its governed story is still unclaimed in Backlog, Analyse, or Plan. Story routing includes inherited feature and child-task requirements.",
+      inputSchema: {
+        workItemId: z.string().uuid(),
+        capabilities: z.array(workerCapability).max(7),
+      },
+    },
+    async ({ workItemId, capabilities }) => textResult(await rest("/rpc/set_work_item_required_capabilities", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: workItemId, requested_capabilities: capabilities, actor_name: "AI agent" }),
+    })),
+  );
+
+  server.registerTool(
     "claim_next_ready_work_item",
     {
-      description: "Atomically claim one dependency-ready story as this authenticated registered worker. Parallel Codex and Claude workers receive different stories.",
+      description: "Atomically claim one dependency-ready story whose required capabilities are a subset of this authenticated worker's advertised capabilities. Parallel Codex and Claude workers receive different compatible stories.",
       inputSchema: { projectId: z.string().uuid(), ...credentials },
     },
     async ({ projectId, workerId, resumeToken }) => textResult(await attachRepositoryToContext(await rest("/rpc/claim_next_work_package_as_worker", {

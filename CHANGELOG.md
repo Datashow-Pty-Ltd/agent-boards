@@ -16,6 +16,10 @@ gate.
 - Added persistent project-scoped worker identities for Codex, Claude, and
   other MCP clients, with unique handles, immutable IDs, one-time private
   resume tokens, authenticated claim operations, and registered-worker takeover.
+- Added capability-aware worker registration and PostgreSQL queue routing.
+  Feature, story, and task requirements are inherited into each focused work
+  package; incompatible workers receive `no_compatible_work`, and human
+  takeover cannot transfer a claim to an unequipped worker.
 
 ## [0.1.0-alpha.1] - 2026-11-09
 

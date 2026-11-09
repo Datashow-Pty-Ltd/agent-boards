@@ -460,13 +460,14 @@ function buildServer() {
         owner: z.string().max(120).optional(),
         acceptanceCriteria: z.array(acceptanceCriterionSchema).min(1).max(30).optional(),
         invariants: z.array(z.string().min(1).max(1000)).max(30).optional(),
+        requiredWorkerCapabilities: z.array(z.enum(["code_execution", "git", "browser_automation", "screenshot_capture", "screen_recording", "image_generation", "visual_comparison"])).max(7).optional(),
         visualEvidenceRequired: z.boolean().default(false).describe("Mark this feature or story as a visual change. Child stories inherit the marker from a visual feature."),
         interactionEvidenceRequired: z.boolean().default(false).describe("Require a human-reviewed, continuous real-time interaction walkthrough. Use for material click, drag, touch, keyboard, navigation, animation, or multi-step UI behavior."),
         designCardType: z.enum(["visual_concept", "screen_mockup"]).optional().describe("Use visual_concept for the alternatives/selection card or screen_mockup for a shared mockup card."),
         screenNames: z.array(z.string().min(1).max(240)).max(100).optional().describe("Every affected screen, important state, and viewport variant that needs an approved mockup."),
       },
     },
-    async ({ projectId, title, description, kind, priority, parentId, owner, acceptanceCriteria, invariants, visualEvidenceRequired, interactionEvidenceRequired, designCardType, screenNames }) => {
+    async ({ projectId, title, description, kind, priority, parentId, owner, acceptanceCriteria, invariants, requiredWorkerCapabilities, visualEvidenceRequired, interactionEvidenceRequired, designCardType, screenNames }) => {
       let created = await rest("/rpc/create_backlog_item", {
           method: "POST",
           body: JSON.stringify({
@@ -488,6 +489,12 @@ function buildServer() {
           }),
         });
       const createdItem = Array.isArray(created) ? created[0] : null;
+      if (requiredWorkerCapabilities?.length && typeof createdItem?.id === "string") {
+        await rest("/rpc/set_work_item_required_capabilities", {
+          method: "POST",
+          body: JSON.stringify({ target_work_item_id: createdItem.id, requested_capabilities: requiredWorkerCapabilities, actor_name: "AI agent" }),
+        });
+      }
       if (owner && typeof createdItem?.id === "string") {
         created = await rest("/rpc/set_work_item_owner", { method: "POST", body: JSON.stringify({ target_work_item_id: createdItem.id, owner_name: owner, actor_name: "AI agent" }) });
       }

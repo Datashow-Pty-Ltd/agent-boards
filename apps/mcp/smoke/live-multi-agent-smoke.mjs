@@ -43,18 +43,19 @@ test("registered Codex and Claude workers claim and move distinct stories concur
     }),
   });
   const workerSpecs = [
-    { handle: `codex-alpha-${suffix}`, displayName: "Codex Alpha", clientType: "codex" },
-    { handle: `claude-beta-${suffix}`, displayName: "Claude Beta", clientType: "claude" },
-    { handle: `codex-gamma-${suffix}`, displayName: "Codex Gamma", clientType: "codex" },
-    { handle: `codex-delta-${suffix}`, displayName: "Codex Delta", clientType: "codex" },
+    { handle: `codex-alpha-${suffix}`, displayName: "Codex Alpha", clientType: "codex", capabilities: ["image_generation"] },
+    { handle: `claude-beta-${suffix}`, displayName: "Claude Beta", clientType: "claude", capabilities: ["browser_automation"] },
+    { handle: `codex-gamma-${suffix}`, displayName: "Codex Gamma", clientType: "codex", capabilities: [] },
+    { handle: `codex-delta-${suffix}`, displayName: "Codex Delta", clientType: "codex", capabilities: ["image_generation"] },
   ];
   const clients = [];
   const identities = [];
+  const createdStories = [];
 
   try {
     const [board] = await api(`/boards?project_id=eq.${project.id}&select=id`);
     for (let index = 0; index < 3; index += 1) {
-      await api("/rpc/create_backlog_item", {
+      const [createdStory] = await api("/rpc/create_backlog_item", {
         method: "POST",
         body: JSON.stringify({
           target_project_id: project.id,
@@ -74,7 +75,16 @@ test("registered Codex and Claude workers claim and move distinct stories concur
           actor_name: "Release test",
         }),
       });
+      createdStories.push(createdStory);
     }
+    await api("/rpc/set_work_item_required_capabilities", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: createdStories[0].id, requested_capabilities: ["image_generation"], actor_name: "Release test" }),
+    });
+    await api("/rpc/set_work_item_required_capabilities", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: createdStories[1].id, requested_capabilities: ["browser_automation"], actor_name: "Release test" }),
+    });
 
     for (const worker of workerSpecs) {
       const client = new Client({ name: worker.displayName, version: "1.0.0" });
@@ -88,6 +98,8 @@ test("registered Codex and Claude workers claim and move distinct stories concur
 
     assert.equal(new Set(identities.map((identity) => identity.worker_id)).size, 4, "worker IDs must be immutable and distinct");
     assert.ok(identities.every((identity) => identity.resume_token?.length >= 32), "registration must return a one-time private token");
+    assert.deepEqual(identities[0].capabilities, ["image_generation"]);
+    assert.deepEqual(identities[1].capabilities, ["browser_automation"]);
     const resumed = resultJson(await clients[1].callTool({
       name: "resume_worker",
       arguments: { workerId: identities[1].worker_id, resumeToken: identities[1].resume_token },
@@ -123,7 +135,11 @@ test("registered Codex and Claude workers claim and move distinct stories concur
       assert.equal(story.owner, workerSpecs[index].handle, "first claim should assign durable ownership to the registered handle");
       assert.equal(story.assignee, workerSpecs[index].handle, "claim should record the registered active worker");
       assert.equal(story.assignee_worker_id, identities[index].worker_id, "claim must bind the immutable worker ID");
+      const required = packages[index].work_package.required_worker_capabilities;
+      assert.ok(required.every((capability) => identities[index].capabilities.includes(capability)), "the queue must only return work compatible with the worker");
     });
+    assert.equal(stories[0].id, createdStories[0].id, "the image-capable Codex worker should receive image-generation work");
+    assert.equal(stories[1].id, createdStories[1].id, "Claude should receive browser work without claiming image generation");
 
     await Promise.all(clients.slice(0, 3).map((client, index) => client.callTool({
       name: "move_work_item",
@@ -164,11 +180,89 @@ test("registered Codex and Claude workers claim and move distinct stories concur
       body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_id: identities[3].worker_id, human_name: "Release test" }),
     }), /still active/i);
 
+    const [screenRecordingStory] = await api("/rpc/create_backlog_item", {
+      method: "POST",
+      body: JSON.stringify({
+        target_project_id: project.id,
+        item_title: "Capture validation walkthrough",
+        item_description: "Capability-routing proof that initially has no compatible worker.",
+        item_kind: "story",
+        item_priority: "urgent",
+        parent_work_item_id: null,
+        item_assignee: null,
+        item_acceptance_criteria: [{
+          statement: "A registered worker captures the validation walkthrough.",
+          verification_method: "database_assertion",
+          verification_ref: "api.work_items.assignee_worker_id",
+          expected_result: "The story is assigned only after screen_recording is registered.",
+        }],
+        item_invariants: ["Only a screen-recording-capable worker may claim this story."],
+        actor_name: "Release test",
+      }),
+    });
+    await api("/rpc/set_work_item_required_capabilities", {
+      method: "POST",
+      body: JSON.stringify({
+        target_work_item_id: screenRecordingStory.id,
+        requested_capabilities: ["screen_recording"],
+        actor_name: "Release test",
+      }),
+    });
+    const incompatible = resultJson(await clients[3].callTool({
+      name: "claim_next_ready_work_item",
+      arguments: {
+        projectId: project.id,
+        workerId: identities[3].worker_id,
+        resumeToken: identities[3].resume_token,
+      },
+    }));
+    assert.equal(incompatible.outcome, "no_compatible_work");
+    assert.equal(incompatible.incompatible_work[0].work_item_id, screenRecordingStory.id);
+
+    const updatedWorker = resultJson(await clients[3].callTool({
+      name: "update_worker_capabilities",
+      arguments: {
+        workerId: identities[3].worker_id,
+        resumeToken: identities[3].resume_token,
+        capabilities: ["image_generation", "screen_recording"],
+      },
+    }));
+    assert.deepEqual(updatedWorker.capabilities, ["image_generation", "screen_recording"]);
+    const screenRecordingClaim = resultJson(await clients[3].callTool({
+      name: "claim_next_ready_work_item",
+      arguments: {
+        projectId: project.id,
+        workerId: identities[3].worker_id,
+        resumeToken: identities[3].resume_token,
+      },
+    }));
+    assert.equal(screenRecordingClaim.work_package.story.id, screenRecordingStory.id);
+    assert.match(await apiFailure("/rpc/update_agent_worker_capabilities", {
+      method: "POST",
+      body: JSON.stringify({
+        target_worker_id: identities[3].worker_id,
+        resume_token: identities[3].resume_token,
+        requested_capabilities: ["image_generation"],
+      }),
+    }), /active claim.*cannot be removed/i);
+    await clients[3].callTool({
+      name: "release_work_item",
+      arguments: {
+        workItemId: screenRecordingStory.id,
+        workerId: identities[3].worker_id,
+        resumeToken: identities[3].resume_token,
+      },
+    });
+
     const staleTimestamp = new Date(Date.now() - 20 * 60_000).toISOString();
     await api(`/work_items?id=eq.${stories[0].id}`, {
       method: "PATCH",
       body: JSON.stringify({ claim_heartbeat_at: staleTimestamp }),
     });
+    assert.match(await apiFailure("/rpc/authorize_idle_claim_takeover", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_id: identities[1].worker_id, human_name: "Release test" }),
+    }), /does not provide every required capability/i);
     const [takenOver] = await api("/rpc/authorize_idle_claim_takeover", {
       method: "POST",
       body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_id: identities[3].worker_id, human_name: "Release test" }),

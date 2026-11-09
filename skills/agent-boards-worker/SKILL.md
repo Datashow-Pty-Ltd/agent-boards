@@ -12,9 +12,9 @@ Use the `agent-boards` MCP server as the authoritative project record and queue.
 - Identify the requested Agent Boards project with `list_projects`; do not guess from a similarly named repository.
 - Confirm the active workspace is the repository in which the claimed work should be implemented.
 - Do not claim work for a read-only request such as reviewing, explaining, or reporting backlog status.
-- Register once for the project with `register_worker`, using a stable unique lowercase handle and the correct client type (`codex`, `claude`, or `other`). Retain the returned immutable worker ID and one-time resume token for this work session. If retained credentials already exist, verify them with `resume_worker` instead of registering again.
+- Register once for the project with `register_worker`, using a stable unique lowercase handle, the correct client type (`codex`, `claude`, or `other`), and only the native capabilities actually available in this session. Retain the returned immutable worker ID and one-time resume token for this work session. If retained credentials already exist, verify them with `resume_worker` instead of registering again. Use `update_worker_capabilities` when the host gains or loses a tool; never advertise a capability merely to receive a card.
 - Treat the resume token as a private credential. Never put it in source files, comments, evidence, board records, logs, or user-facing output, and never use another worker's credentials. A duplicate handle must be resumed with its original credentials or replaced with a genuinely different handle.
-- Use `claim_next_ready_work_item` with the worker ID and resume token as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively. Pass the same credentials to claim, move, heartbeat, block, and release operations. Parallel Codex and Claude workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story.
+- Use `claim_next_ready_work_item` with the worker ID and resume token as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively. Pass the same credentials to claim, move, heartbeat, block, and release operations. Parallel Codex and Claude workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story and filters out stories whose required capabilities are unavailable to that worker.
 - Treat `owner` as durable accountability and `assignee` as the current claim holder. Do not overwrite another active worker's claim. Use `set_work_item_owner` when a person explicitly assigns or transfers responsibility.
 - Treat a claim as a renewable lease. Call `heartbeat_work_item` with the claimed story ID and registered worker credentials at least every five minutes during long-running work, including while waiting on lengthy builds or test suites. Never take over another worker's idle claim yourself; only a person may authorize a transfer or release in Agent Boards.
 
@@ -23,7 +23,7 @@ Use the `agent-boards` MCP server as the authoritative project record and queue.
 Repeat the following sequence within the user's requested scope:
 
 1. Claim the next dependency-ready story.
-2. If the result is `no_ready_work`, stop. Report whether the project is complete or remaining work is blocked; do not poll in a tight loop.
+2. If the result is `no_ready_work`, stop. Report whether the project is complete or remaining work is blocked; do not poll in a tight loop. If it is `no_compatible_work`, report the incompatible items and missing capabilities so a suitably equipped worker can claim them; do not falsely update your capability registration.
 3. Treat the returned work package as the focused contract:
    - the story defines the intended outcome;
    - child tasks define the required pieces of work;
@@ -31,6 +31,7 @@ Repeat the following sequence within the user's requested scope:
    - story acceptance criteria define the finished behaviour;
    - attached visual references and mockups define the intended presentation;
    - promotion acceptance criteria define what is required to enter the next stage.
+   - `required_worker_capabilities` define native execution facilities that must remain available for the claim.
 4. Perform the actual work in the repository. Keep the board synchronized as durable evidence becomes true, not in anticipation of it.
    - Renew the claim with `heartbeat_work_item` at least every five minutes until the story is Done, blocked, or deliberately released.
    - After each child task is actually implemented, call `complete_task` with a concise outcome summary.
