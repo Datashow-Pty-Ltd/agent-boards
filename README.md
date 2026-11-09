@@ -9,6 +9,18 @@ The `v0.1.0-alpha.1` release is for trusted local or self-hosted use. It is not 
 an authenticated multi-tenant service and must not be exposed directly to the
 public Internet.
 
+## See Agent Boards in action
+
+The overview keeps project health, active delivery, recent activity, and the
+source repository in one durable project record.
+
+![Agent Boards demo project overview showing project health, active agents, delivery flow, and recent activity](docs/assets/agent-boards-overview.png)
+
+The delivery board groups the governed workflow into five action lanes while
+preserving the finer-grained evidence gates underneath.
+
+![Agent Boards demo Kanban showing feature groups and stories across Backlog, Define, Deliver, Integrate, and Done](docs/assets/agent-boards-board.png)
+
 ## Quick start with Docker
 
 Requirement: Docker Compose v2.
