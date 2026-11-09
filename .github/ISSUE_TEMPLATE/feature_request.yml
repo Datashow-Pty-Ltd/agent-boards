@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a focused improvement to Agent Boards
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or agent problem needs to be solved?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable, deterministic success criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: visual
+    attributes:
+      label: Does this change have a visual component?
+      options:
+        - "No"
+        - "Yes — visual concept or mockups are required"
+    validations:
+      required: true

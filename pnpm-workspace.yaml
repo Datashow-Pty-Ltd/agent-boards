@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+
+onlyBuiltDependencies:
+  - esbuild
+  - tree-sitter
+  - tree-sitter-javascript
+  - tree-sitter-typescript
+

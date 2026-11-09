@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aquaproj/aqua/v2.66.1/json-schema/aqua-yaml.json
+registries:
+  - type: standard
+    ref: v4.583.0
+
+packages:
+  - name: aquasecurity/trivy@v0.76.2
+  - name: gitleaks/gitleaks@v8.30.1
+  - name: google/osv-scanner@v2.7.0
+  - name: koalaman/shellcheck@v0.11.0
+  - name: hadolint/hadolint@v2.15.1
+  - name: rhysd/actionlint@v1.7.12
+  - name: zizmorcore/zizmor@v1.32.0
+  - name: astral-sh/uv@0.13.7

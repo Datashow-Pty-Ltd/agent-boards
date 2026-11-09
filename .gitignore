@@ -1,0 +1,13 @@
+node_modules/
+dist/
+artifacts/
+.DS_Store
+*.log
+*.tsbuildinfo
+.env
+apps/web/vendor/*.tgz
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+release/
+playwright-report/
+test-results/

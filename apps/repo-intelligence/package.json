@@ -1,0 +1,41 @@
+{
+  "name": "@agent-boards/repo-intelligence",
+  "version": "0.1.0-alpha.1",
+  "description": "Exact-revision repository intelligence service for Agent Boards",
+  "license": "Apache-2.0",
+  "private": true,
+  "homepage": "https://github.com/Datashow-Pty-Ltd/agent-boards#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Datashow-Pty-Ltd/agent-boards.git",
+    "directory": "apps/repo-intelligence"
+  },
+  "bugs": {
+    "url": "https://github.com/Datashow-Pty-Ltd/agent-boards/issues"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.26 <11"
+  },
+  "packageManager": "pnpm@10.26.1",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "express": "5.1.0",
+    "tree-sitter": "0.21.1",
+    "tree-sitter-typescript": "0.23.2",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.5",
+    "@types/node": "24.10.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

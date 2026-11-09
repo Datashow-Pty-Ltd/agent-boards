@@ -1,0 +1,14 @@
+misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - "docker/postgres.Containerfile"
+    statement: >-
+      The official PostgreSQL entrypoint starts as root only to initialise and
+      repair mounted-volume ownership, then drops to the postgres user before
+      starting the database.
+  - id: AVD-DS-0002
+    paths:
+      - "docker/repo-intelligence.Containerfile"
+    statement: >-
+      The entrypoint starts as root only to repair the repository volume and
+      explicitly execs the Node process through su-exec as the node user.

@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a reproducible Agent Boards defect
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not report security vulnerabilities here. Follow SECURITY.md and use
+        GitHub private vulnerability reporting.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag or commit SHA
+      placeholder: v0.1.0-alpha.1
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      options:
+        - Docker Compose
+        - Apple Container
+        - Local development
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal steps, expected result, and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Relevant logs, screenshots, video, or API responses with secrets removed
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, private repository URLs, and customer data.
+          required: true

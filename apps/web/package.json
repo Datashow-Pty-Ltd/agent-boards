@@ -1,0 +1,56 @@
+{
+  "name": "@agent-boards/web",
+  "version": "0.1.0-alpha.1",
+  "description": "Agent Boards web interface",
+  "license": "Apache-2.0",
+  "private": true,
+  "homepage": "https://github.com/Datashow-Pty-Ltd/agent-boards#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Datashow-Pty-Ltd/agent-boards.git",
+    "directory": "apps/web"
+  },
+  "bugs": {
+    "url": "https://github.com/Datashow-Pty-Ltd/agent-boards/issues"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.26 <11"
+  },
+  "packageManager": "pnpm@10.26.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/utilities": "3.2.2",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@fontsource/ibm-plex-serif": "5.3.0",
+    "@mantine/core": "9.4.2",
+    "@mantine/hooks": "9.4.2",
+    "@mantine/notifications": "9.4.2",
+    "@nivo/funnel": "0.99.0",
+    "@tabler/icons-react": "3.37.1",
+    "embla-carousel-react": "8.6.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-markdown": "10.1.0",
+    "react-router": "7.18.2",
+    "remark-gfm": "4.0.1",
+    "skeleton-mammoth": "4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.5",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "4.1.12"
+  }
+}
