@@ -32,6 +32,7 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
 
   const project = page.locator(".project-card").first();
   await expect(project).toBeVisible();
+  await expect(project.getByText("Agent Boards Demo", { exact: true })).toBeVisible();
   await project.click();
 
   await expect(page.getByRole("navigation", { name: "Project views" })).toBeVisible();

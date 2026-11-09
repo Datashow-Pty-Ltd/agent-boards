@@ -295,34 +295,4 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA api TO web_anon;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA api TO web_anon;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA api TO web_anon;
 
-DO $$
-DECLARE p api.projects; b uuid; feature uuid; build_stage uuid; analyse_stage uuid; plan_stage uuid; validate_stage uuid; done_stage uuid;
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM api.projects WHERE project_key = 'AB') THEN
-    SELECT * INTO p FROM api.create_project('Agent Boards', 'AB', 'A shared delivery system for people and AI agents.', 'Product team');
-    UPDATE api.projects SET target_date = current_date + 21 WHERE id = p.id;
-    SELECT id INTO b FROM api.boards WHERE project_id = p.id;
-    SELECT id INTO analyse_stage FROM api.board_stages WHERE board_id = b AND slug = 'analyse';
-    SELECT id INTO plan_stage FROM api.board_stages WHERE board_id = b AND slug = 'plan';
-    SELECT id INTO build_stage FROM api.board_stages WHERE board_id = b AND slug = 'build';
-    SELECT id INTO validate_stage FROM api.board_stages WHERE board_id = b AND slug = 'validate';
-    SELECT id INTO done_stage FROM api.board_stages WHERE board_id = b AND slug = 'done';
-    INSERT INTO api.work_items(project_id, board_id, stage_id, item_key, kind, title, description, priority, estimate_points, labels, position)
-      VALUES (p.id, b, build_stage, 'AB-1', 'feature', 'Shared project delivery board', 'Give humans and agents one visible source of truth for delivery.', 'urgent', 13, '["foundation"]', 0) RETURNING id INTO feature;
-    INSERT INTO api.work_items(project_id, board_id, parent_id, stage_id, item_key, kind, title, description, priority, execution_state, assignee, estimate_points, acceptance_criteria, position) VALUES
-      (p.id, b, feature, done_stage, 'AB-2', 'story', 'Define the board ontology', 'Model projects, stages, features, stories, tasks, activity and telemetry.', 'high', 'complete', 'Architecture agent', 3, '["Schema supports feature/story/task hierarchy","Board stages are governed records"]', 0),
-      (p.id, b, feature, build_stage, 'AB-3', 'story', 'Build the visual kanban board', 'Present the delivery hierarchy with drag and drop.', 'urgent', 'running', 'UI agent', 5, '["Cards can be moved between stages","Board remains usable on a narrow screen"]', 0),
-      (p.id, b, feature, validate_stage, 'AB-4', 'story', 'Expose agent tools over MCP', 'Let agents create, inspect, update and complete work.', 'high', 'running', 'Platform agent', 3, '["MCP tools operate on the same records as the UI"]', 0),
-      (p.id, b, feature, plan_stage, 'AB-5', 'story', 'Add burn-up and telemetry views', 'Show scope, completion, agent usage and delivery health.', 'medium', 'queued', 'Data agent', 2, '["Burn-up reflects point-in-time scope and completion"]', 0),
-      (p.id, b, feature, analyse_stage, 'AB-6', 'story', 'Design human and agent permissions', 'Define authentication, tenancy and scoped agent access.', 'medium', NULL, NULL, 3, '["Access model covers humans, service agents and project-scoped tokens"]', 0);
-    UPDATE api.work_items SET progress = 'completed', completed_at = now() - interval '2 days' WHERE item_key = 'AB-2';
-    INSERT INTO api.telemetry_events(project_id, work_item_id, agent_name, provider, model, status, duration_ms, input_tokens, output_tokens, estimated_cost_usd)
-    SELECT p.id, id, 'Architecture agent', 'openai', 'gpt-5', 'completed', 842000, 18240, 6140, 0.78 FROM api.work_items WHERE item_key = 'AB-2';
-    INSERT INTO api.telemetry_events(project_id, work_item_id, agent_name, provider, model, status, duration_ms, input_tokens, output_tokens, estimated_cost_usd)
-    SELECT p.id, id, 'UI agent', 'openai', 'gpt-5', 'running', 415000, 12800, 4380, 0.51 FROM api.work_items WHERE item_key = 'AB-3';
-    INSERT INTO api.activity_events(project_id, work_item_id, event_type, actor_type, actor_name, summary)
-    SELECT p.id, id, 'work_item.completed', 'agent', 'Architecture agent', 'Completed AB-2 with schema evidence' FROM api.work_items WHERE item_key = 'AB-2';
-  END IF;
-END $$;
-
 NOTIFY pgrst, 'reload schema';

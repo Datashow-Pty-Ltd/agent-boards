@@ -8,9 +8,9 @@ OUTPUT=${1:-"$ROOT_DIR/release/agent-boards-$VERSION-source.tgz"}
 mkdir -p "$(dirname -- "$OUTPUT")"
 cd "$ROOT_DIR"
 
-# This is an allowlist, not a repository dump. Local screenshots, prior build
-# output, caches, the obsolete private chart archive, and editor state never
-# enter the source distribution.
+# This is an allowlist, not a repository dump. Curated README media lives under
+# docs; transient captures, prior build output, caches, obsolete vendored
+# packages, and editor state never enter the source distribution.
 tar -czf "$OUTPUT" \
   --exclude='**/node_modules' \
   --exclude='**/dist' \
