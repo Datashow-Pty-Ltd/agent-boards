@@ -1,4 +1,8 @@
-# Agent Boards
+<p align="center">
+  <img src="docs/assets/agent-boards-logo.svg" width="128" height="128" alt="Agent Boards logo">
+</p>
+
+<h1 align="center">Agent Boards</h1>
 
 Agent Boards is a shared, governed project record for people and AI coding
 agents. Projects own one delivery board; features contain stories, stories
