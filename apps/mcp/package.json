@@ -25,7 +25,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test",
-    "test:live": "node --test smoke/live-gateway-smoke.mjs"
+    "test:live": "node --test smoke/*.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

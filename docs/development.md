@@ -33,7 +33,7 @@ checks:
 pnpm install --frozen-lockfile
 pnpm release:check     # lint, limits, types, tests, builds, audit, secrets
 pnpm certify           # release gate plus SBOM, archive and verification
-pnpm test:live         # live MCP request through OpenResty; stack must run
+pnpm test:live         # gateway smoke plus concurrent multi-worker MCP claims
 pnpm test:browser      # packaged UI navigation and keyboard smoke test
 pnpm test:claude       # real Claude Code MCP call; Claude must be authenticated
 pnpm release:verify:public # final public gate; requires the selected licence
@@ -48,6 +48,10 @@ its defaults.
 Never edit a released migration. Add the next numbered file under
 `database/migrations/`; make it idempotent where practical and enforce durable
 workflow rules in PostgreSQL rather than only in the UI or MCP prompt.
+Both container runners record successfully applied filenames in
+`public.schema_migrations`; an existing pre-ledger installation is baselined
+only when the migration-033 `complete_task` function proves that the published
+history is already present.
 
 ## UI conventions
 

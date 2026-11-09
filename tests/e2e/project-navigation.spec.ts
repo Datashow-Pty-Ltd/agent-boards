@@ -30,7 +30,7 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByRole("heading", { name: "Project delivery" })).toBeVisible();
 
-  const project = page.locator(".project-card").first();
+  const project = page.locator(".project-card").filter({ hasText: "Agent Boards Demo" });
   await expect(project).toBeVisible();
   await expect(project.getByText("Agent Boards Demo", { exact: true })).toBeVisible();
   await project.click();

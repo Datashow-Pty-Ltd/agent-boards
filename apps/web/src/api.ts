@@ -161,8 +161,19 @@ export const api = {
     });
     return items[0] ?? null;
   },
-  createItem: async (value: { projectId: string; title: string; description: string; kind: WorkKind; priority: Priority; assignee?: string; parentId?: string; acceptanceCriteria?: AcceptanceCriterionInput[]; invariants?: string[]; visualEvidenceRequired?: boolean; designCardType?: DesignCardType; screenNames?: string[] }) => {
-    const created = await request<WorkItem[]>("/rpc/create_backlog_item", {
+  completeTask: async (id: string, summary?: string) => {
+    const items = await request<WorkItem[]>("/rpc/complete_task", {
+      method: "POST",
+      body: JSON.stringify({
+        target_task_id: id,
+        actor_name: "You",
+        completion_summary: summary ?? null,
+      }),
+    });
+    return items[0] ?? null;
+  },
+  createItem: async (value: { projectId: string; title: string; description: string; kind: WorkKind; priority: Priority; owner?: string; parentId?: string; acceptanceCriteria?: AcceptanceCriterionInput[]; invariants?: string[]; visualEvidenceRequired?: boolean; designCardType?: DesignCardType; screenNames?: string[] }) => {
+    let created = await request<WorkItem[]>("/rpc/create_backlog_item", {
       method: "POST",
       body: JSON.stringify({
         target_project_id: value.projectId,
@@ -171,7 +182,7 @@ export const api = {
         item_kind: value.kind,
         item_priority: value.priority,
         parent_work_item_id: value.parentId ?? null,
-        item_assignee: value.assignee || null,
+        item_assignee: null,
         item_acceptance_criteria: (value.acceptanceCriteria ?? []).map((criterion) => ({
           statement: criterion.statement,
           verification_method: criterion.verificationMethod,
@@ -182,6 +193,7 @@ export const api = {
         actor_name: "You",
       }),
     });
+    if (created[0] && value.owner?.trim()) created = await api.setWorkItemOwner(created[0].id, value.owner);
     if (value.kind === "story" && created[0] && (value.designCardType || value.screenNames?.length)) {
       return request<WorkItem[]>("/rpc/set_design_card", {
         method: "POST",
@@ -202,6 +214,10 @@ export const api = {
     return created;
   },
   updateItem: (id: string, values: Partial<WorkItem>) => request<WorkItem[]>(`/work_items?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(values) }),
+  setWorkItemOwner: (id: string, owner: string | null) => request<WorkItem[]>("/rpc/set_work_item_owner", {
+    method: "POST",
+    body: JSON.stringify({ target_work_item_id: id, owner_name: owner, actor_name: "You" }),
+  }),
   workItem: async (id: string) => {
     const items = await request<WorkItem[]>(`/work_items?id=eq.${id}&limit=1`);
     return items[0] ?? null;

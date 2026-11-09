@@ -89,6 +89,7 @@ export interface WorkItem {
   progress: "not_started" | "in_progress" | "completed";
   execution_state: ExecutionState;
   blocked_reason: string | null;
+  owner: string | null;
   assignee: string | null;
   due_date: string | null;
   start_date: string | null;

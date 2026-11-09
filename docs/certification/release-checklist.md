@@ -8,6 +8,7 @@ public or creating a version tag.
 
 - [x] `pnpm certify` passes from the candidate worktree.
 - [x] `pnpm test:live` passes through OpenResty.
+- [x] Three independent MCP clients atomically claim and move three distinct stories.
 - [x] `pnpm test:browser` passes against the complete stack.
 - [x] `pnpm test:claude` passes using an authenticated Claude Code client.
 - [x] Docker Compose builds and reaches healthy state.

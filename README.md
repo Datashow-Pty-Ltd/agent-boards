@@ -132,6 +132,17 @@ tool again. If the story cannot progress, it records the reason with
 `block_work_item` and immediately asks for the next ready item. The loop stops
 when `claim_next_ready_work_item` returns `no_ready_work`.
 
+Several Codex, Claude, or other MCP clients can work the same project at once.
+Give each worker a stable, unique name and let each run the same claim loop.
+Claims use row locking with `SKIP LOCKED`, so concurrent workers receive
+different ready stories instead of racing for the same card. `owner` is the
+durable person or agent accountable for an item; `assignee` is the transient
+worker holding its current claim and is cleared when that claim is released or
+blocked. The queue prefers work already owned by the requesting worker, then
+unowned work, and assigns durable ownership on the first claim. Every move is
+still emitted as an individual board event, so independently progressing cards
+use the existing one-card movement animation without refreshing the board.
+
 Stage progression is evidence-gated for stories. Analyse must produce analysis
 evidence, Plan must produce an implementation plan, Build must identify the
 implemented revision, and Validate must record passing tests for that revision.
@@ -358,6 +369,17 @@ tools above.
 - `GET /api/project_artifacts?project_id=eq.<project-id>&artifact_key=eq.<key>` — read one record
 - `POST /api/rpc/upsert_project_artifact` — create or version a record
 - `PATCH /api/project_artifacts?id=eq.<record-id>` — update through PostgREST
+
+## Multi-worker ownership API
+
+- `POST /api/rpc/set_work_item_owner` — assign or clear durable ownership
+- `GET /api/project_owner_summary?project_id=eq.<project-id>` — owner workload counts
+- `POST /api/rpc/claim_next_work_package` — atomically claim one distinct ready story
+- MCP `set_work_item_owner` and `list_project_owners` expose the same ownership model
+
+Multiple workers are supported by the local trusted stack. This is concurrency,
+not tenant security: authentication, project-scoped authorization, and hosted
+multi-tenant isolation remain future production boundaries.
 
 ## Development checks
 

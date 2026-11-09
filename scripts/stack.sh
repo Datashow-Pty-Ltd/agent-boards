@@ -74,8 +74,30 @@ case "$ACTION" in
       sleep 1
     done
 
+    container exec "$DB" psql -v ON_ERROR_STOP=1 -U agentboards -d agentboards -c \
+      "CREATE TABLE IF NOT EXISTS public.schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())" >/dev/null
+    baseline=$(container exec "$DB" psql -At -U agentboards -d agentboards -c \
+      "SELECT to_regprocedure('api.complete_task(uuid,text,text)') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.schema_migrations)")
+    if [ "$baseline" = "t" ]; then
+      for migration in "$ROOT_DIR"/database/migrations/*.sql; do
+        migration_name=$(basename "$migration")
+        case "$migration_name" in
+          00[2-9]-*|0[12][0-9]-*|03[0-3]-*)
+            container exec "$DB" psql -v ON_ERROR_STOP=1 -U agentboards -d agentboards -c \
+              "INSERT INTO public.schema_migrations(filename) VALUES ('$migration_name') ON CONFLICT DO NOTHING" >/dev/null
+            ;;
+        esac
+      done
+    fi
     for migration in "$ROOT_DIR"/database/migrations/*.sql; do
-      container exec --interactive "$DB" psql -v ON_ERROR_STOP=1 -U agentboards -d agentboards < "$migration" >/dev/null
+      migration_name=$(basename "$migration")
+      applied=$(container exec "$DB" psql -At -U agentboards -d agentboards -c \
+        "SELECT EXISTS (SELECT 1 FROM public.schema_migrations WHERE filename = '$migration_name')")
+      if [ "$applied" = "f" ]; then
+        container exec --interactive "$DB" psql -v ON_ERROR_STOP=1 -U agentboards -d agentboards < "$migration" >/dev/null
+        container exec "$DB" psql -v ON_ERROR_STOP=1 -U agentboards -d agentboards -c \
+          "INSERT INTO public.schema_migrations(filename) VALUES ('$migration_name')" >/dev/null
+      fi
     done
 
     echo "Starting PostgREST, repository intelligence, MCP, web, and OpenResty gateway..."

@@ -22,6 +22,7 @@ import {
 } from "./media.js";
 import { serverInstructions } from "./serverInstructions.js";
 import { registerBoardSettingsTool } from "./boardSettingsTool.js";
+import { registerOwnershipTools } from "./ownershipTools.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const app = express();
@@ -95,6 +96,7 @@ function buildServer() {
   }
 
   registerBoardSettingsTool(server);
+  registerOwnershipTools(server);
 
   server.registerTool(
     "list_service_capabilities",
@@ -133,7 +135,7 @@ function buildServer() {
         name: z.string().min(1).max(160),
         key: z.string().min(2).max(12).regex(/^[A-Za-z][A-Za-z0-9-]*$/),
         description: z.string().max(2000).optional(),
-        owner: z.string().max(120).optional(),
+        owner: z.string().min(1).max(120).optional(),
         repositoryUrl: z.string().url().max(2000).optional(),
         defaultBranch: z.string().min(1).max(240).default("main"),
       },
@@ -453,7 +455,7 @@ function buildServer() {
         kind: z.enum(["feature", "story", "task"]).default("story"),
         priority: z.enum(["urgent", "high", "medium", "low"]).default("medium"),
         parentId: z.string().uuid().optional(),
-        assignee: z.string().max(120).optional(),
+        owner: z.string().max(120).optional(),
         acceptanceCriteria: z.array(acceptanceCriterionSchema).min(1).max(30).optional(),
         invariants: z.array(z.string().min(1).max(1000)).max(30).optional(),
         visualEvidenceRequired: z.boolean().default(false).describe("Mark this feature or story as a visual change. Child stories inherit the marker from a visual feature."),
@@ -462,8 +464,8 @@ function buildServer() {
         screenNames: z.array(z.string().min(1).max(240)).max(100).optional().describe("Every affected screen, important state, and viewport variant that needs an approved mockup."),
       },
     },
-    async ({ projectId, title, description, kind, priority, parentId, assignee, acceptanceCriteria, invariants, visualEvidenceRequired, interactionEvidenceRequired, designCardType, screenNames }) => {
-      const created = await rest("/rpc/create_backlog_item", {
+    async ({ projectId, title, description, kind, priority, parentId, owner, acceptanceCriteria, invariants, visualEvidenceRequired, interactionEvidenceRequired, designCardType, screenNames }) => {
+      let created = await rest("/rpc/create_backlog_item", {
           method: "POST",
           body: JSON.stringify({
             target_project_id: projectId,
@@ -472,7 +474,7 @@ function buildServer() {
             item_kind: kind,
             item_priority: priority,
             parent_work_item_id: parentId ?? null,
-            item_assignee: assignee ?? null,
+            item_assignee: null,
             item_acceptance_criteria: (acceptanceCriteria ?? []).map((criterion) => ({
               statement: criterion.statement,
               verification_method: criterion.verificationMethod,
@@ -484,6 +486,9 @@ function buildServer() {
           }),
         });
       const createdItem = Array.isArray(created) ? created[0] : null;
+      if (owner && typeof createdItem?.id === "string") {
+        created = await rest("/rpc/set_work_item_owner", { method: "POST", body: JSON.stringify({ target_work_item_id: createdItem.id, owner_name: owner, actor_name: "AI agent" }) });
+      }
       if (kind === "story" && interactionEvidenceRequired && typeof createdItem?.id === "string") {
         await rest("/rpc/set_interaction_evidence_requirement", {
           method: "POST",
@@ -547,7 +552,6 @@ function buildServer() {
         description: z.string().max(5000).optional(),
         priority: z.enum(["urgent", "high", "medium", "low"]).optional(),
         parentId: z.string().uuid().nullable().optional(),
-        assignee: z.string().max(120).nullable().optional(),
         executionState: z.enum(["queued", "running", "waiting_for_human", "blocked", "failed", "complete", "cancelled"]).nullable().optional(),
         blockedReason: z.string().max(1000).nullable().optional(),
         estimatePoints: z.number().int().min(1).max(100).optional(),
@@ -606,6 +610,26 @@ function buildServer() {
       }
       return textResult(updated);
     },
+  );
+
+  server.registerTool(
+    "complete_task",
+    {
+      description: "Mark one implemented child task complete. This atomically synchronizes progress, execution state, and completion time so the parent story can satisfy its task gate.",
+      inputSchema: {
+        taskId: z.string().uuid(),
+        actor: z.string().max(120).default("AI agent"),
+        summary: z.string().max(500).optional(),
+      },
+    },
+    async ({ taskId, actor, summary }) => textResult(await rest("/rpc/complete_task", {
+      method: "POST",
+      body: JSON.stringify({
+        target_task_id: taskId,
+        actor_name: actor,
+        completion_summary: summary ?? null,
+      }),
+    })),
   );
 
   server.registerTool(
@@ -717,7 +741,7 @@ function buildServer() {
   server.registerTool(
     "claim_next_ready_work_item",
     {
-      description: "Atomically fetch and claim the highest-priority dependency-ready story. Returns only the focused story, required child tasks, invariants, deterministic story acceptance criteria, and the current stage's acceptance criteria for promotion. Call it again after every Done or Blocked outcome.",
+      description: "Atomically claim one dependency-ready story for this uniquely named worker. Parallel workers receive different stories. Work owned by this worker is preferred; otherwise an unowned story is claimed and ownership is assigned. Call again after every Done or Blocked outcome.",
       inputSchema: {
         projectId: z.string().uuid(),
         agentName: z.string().min(1).max(120),
@@ -859,7 +883,7 @@ function buildServer() {
   server.registerTool(
     "claim_work_item",
     {
-      description: "Atomically claim a ready story for an agent. The database rejects stories with any incomplete prerequisite.",
+      description: "Atomically claim a ready story for one uniquely named worker. Parallel workers cannot claim the same story, and an unowned story becomes owned by its first worker.",
       inputSchema: {
         workItemId: z.string().uuid(),
         agentName: z.string().min(1).max(120),

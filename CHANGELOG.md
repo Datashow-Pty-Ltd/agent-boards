@@ -6,6 +6,12 @@ gate.
 
 ## [Unreleased]
 
+- Added first-class work-item owners, separate active workers, owner-aware
+  atomic claims, concurrent MCP worker guidance, and a live three-client claim
+  and movement test.
+- Added a shared migration ledger so existing installations do not re-run
+  historical data repairs when a new release migration is deployed.
+
 ## [0.1.0-alpha.1] - 2026-11-09
 
 - Prepared the first open-source release candidate.
