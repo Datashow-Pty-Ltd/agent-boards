@@ -59,7 +59,12 @@ rate limiting are prerequisites for a hosted multi-user deployment.
 
 ## Workflow authority
 
-The visible board groups fine-grained database stages into action lanes. The
-database remains authoritative for legal one-hop transitions and evidence.
+The visible board groups adjacent fine-grained database stages into
+project-defined action lanes. A project can use one compact lane, nine detailed
+lanes, or any adjacent grouping between those extremes, with custom names,
+purpose, actors, WIP limits and exit criteria. The database remains
+authoritative for the fixed stage identities, order, legal one-hop transitions
+and evidence; the current alpha does not support adding, removing or reordering
+governed stages.
 Design-only cards use the dedicated completion operation after approval rather
 than fabricating code, test, review, or merge evidence.
