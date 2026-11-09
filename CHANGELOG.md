@@ -8,8 +8,9 @@ gate.
 
 - Prepared the first open-source release candidate.
 - Added a focused first-run overview, replayable project workflow settings,
-  configurable board buckets and deterministic exit criteria, and Datashow
-  attribution in the application footer.
+  an MCP connection explainer with a copyable agent instruction, configurable
+  board buckets and deterministic exit criteria, and Datashow attribution in
+  the application footer.
 - Kept the Kanban board fixed to the viewport, moved vertical scrolling into
   individual lanes, and added collapsible state, feature, and story groups.
 - Added governed delivery stages, deterministic acceptance criteria, visual

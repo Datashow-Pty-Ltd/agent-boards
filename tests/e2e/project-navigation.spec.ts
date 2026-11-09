@@ -6,7 +6,28 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "The board is the source of truth" })).toBeVisible();
+  const tourClose = page.locator(".tour-modal .mantine-Modal-close");
+  await expect(tourClose).not.toBeFocused();
+  expect(await tourClose.evaluate((element) => element.matches(":focus-visible"))).toBe(false);
+  await page.keyboard.press("Tab");
+  await expect(tourClose).toBeFocused();
+  expect(await tourClose.evaluate((element) => element.matches(":focus-visible"))).toBe(true);
+  for (let step = 0; step < 4; step += 1) await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "Connect your coding agent" })).toBeVisible();
+  await expect(page.getByText("Streamable HTTP MCP endpoint at /mcp", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy instruction" })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 700 });
+  const progressRows = await page.locator(".tour-progress i").evaluateAll((steps) =>
+    new Set(steps.map((step) => Math.round(step.getBoundingClientRect().top))).size,
+  );
+  expect(progressRows).toBe(1);
+  await expect(page.getByRole("button", { name: "Copy instruction" })).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page.getByRole("heading", { name: "Evidence closes the loop" })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("button", { name: "Start using Agent Boards" })).toBeVisible();
   await page.getByRole("button", { name: "Skip tour" }).click();
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByRole("heading", { name: "Project delivery" })).toBeVisible();
 
   const project = page.locator(".project-card").first();
