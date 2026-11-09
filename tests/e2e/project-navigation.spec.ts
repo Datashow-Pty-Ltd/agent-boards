@@ -66,6 +66,19 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   await expect(storyGroup).toHaveAttribute("aria-expanded", "false");
   await storyGroup.click();
 
+  const featureCard = page.locator(".feature-card").first();
+  await expect(featureCard).toBeVisible();
+  await featureCard.click();
+  const linkedStories = page.locator(".record-story-list > button");
+  await expect(page.locator(".record-block-title").filter({ hasText: "Stories" })).toBeVisible();
+  await expect(linkedStories).toHaveCount(2);
+  await expect(page.locator(".record-register-group")).toHaveCount(3);
+  await expect(page.locator(".record-register-empty")).toHaveCount(3);
+  const linkedStoryKey = await linkedStories.first().locator("small").textContent();
+  await linkedStories.first().click();
+  await expect(page.locator(".record-drawer-heading .eyebrow")).toContainText(linkedStoryKey?.split(" · ")[0] ?? "DEMO-");
+  await page.keyboard.press("Escape");
+
   const card = page.locator(".work-card").first();
   if (await card.count()) {
     await card.click();

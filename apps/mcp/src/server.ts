@@ -1226,6 +1226,52 @@ function buildServer() {
   );
 
   server.registerTool(
+    "list_work_item_register_entries",
+    {
+      description: "List the project decisions, issues and risks explicitly linked to a feature or story.",
+      inputSchema: {
+        workItemId: z.string().uuid(),
+        type: z.enum(["decision", "issue", "risk"]).optional(),
+      },
+    },
+    async ({ workItemId, type }) => textResult(await rest(
+      `/work_item_register_entries?work_item_id=eq.${workItemId}${type ? `&entry_type=eq.${type}` : ""}&order=entry_type.asc,created_at.asc`,
+    )),
+  );
+
+  server.registerTool(
+    "record_work_item_register_entry",
+    {
+      description: "Create or update a decision, issue or risk linked directly to a feature or story. Use entryId to update an existing related record.",
+      inputSchema: {
+        workItemId: z.string().uuid(),
+        type: z.enum(["decision", "issue", "risk"]),
+        title: z.string().min(1).max(240),
+        description: z.string().max(5000).default(""),
+        status: z.string().min(1).max(80).default("open"),
+        owner: z.string().max(120).optional(),
+        actor: z.string().min(1).max(120).default("AI agent"),
+        entryId: z.string().uuid().optional(),
+      },
+    },
+    async ({ workItemId, type, title, description, status, owner, actor, entryId }) => textResult(
+      await rest("/rpc/upsert_work_item_register_entry", {
+        method: "POST",
+        body: JSON.stringify({
+          target_work_item_id: workItemId,
+          target_entry_type: type,
+          entry_title: title,
+          entry_description: description,
+          entry_status: status,
+          entry_owner: owner ?? null,
+          actor_name: actor,
+          target_entry_id: entryId ?? null,
+        }),
+      }),
+    ),
+  );
+
+  server.registerTool(
     "record_work_item_evidence",
     {
       description: "Record a delivery gate result. Revision-bearing evidence must identify the exact revision. Approved review evidence requires details.unresolved_findings = 0. Merge evidence records the merged revision and details.reviewed_revision. Post-merge verification always requires passing regression evidence for the merged revision; when the regression suite is explicitly waived, record the passing alternative in details.alternative_check. Other project quality evidence becomes a Done gate when its constraint is required.",

@@ -1,23 +1,12 @@
 import { ActionIcon, Button, Drawer, FileInput, Group, Modal, MultiSelect, Select, Switch, Textarea, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconArrowRight, IconCheck, IconLock, IconPhoto, IconStar, IconTrash, IconVideo } from "@tabler/icons-react";
+import { IconCheck, IconLock, IconPhoto, IconStar, IconTrash, IconVideo } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { acceptanceVerificationMethods, emptyAcceptanceCriterion } from "../acceptanceCriteria";
 import { api } from "../api";
-import type { AcceptanceCriterionInput, AcceptanceVerificationMethod, ActivityEvent, DesignCardType, ExecutionState, Priority, PromotionAcceptanceCriterion, Stage, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence } from "../types";
+import type { AcceptanceCriterionInput, AcceptanceVerificationMethod, ActivityEvent, DesignCardType, ExecutionState, Priority, PromotionAcceptanceCriterion, Stage, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkItemRegisterEntry } from "../types";
 import { ClaimControl } from "./ClaimControl";
-
-const acceptanceVerificationMethods: Array<{ value: AcceptanceVerificationMethod; label: string }> = [
-  { value: "automated_test", label: "Automated test" },
-  { value: "command", label: "Command" },
-  { value: "http_assertion", label: "HTTP assertion" },
-  { value: "database_assertion", label: "Database assertion" },
-  { value: "visual_baseline", label: "Visual baseline" },
-];
-
-function emptyAcceptanceCriterion(): AcceptanceCriterionInput {
-  return { statement: "", verificationMethod: "automated_test", verificationRef: "", expectedResult: "" };
-}
+import { FeatureStories, RelatedRegisterEntries } from "./ItemRelations";
 
 type Props = {
   item: WorkItem | null;
@@ -27,6 +16,7 @@ type Props = {
   opened: boolean;
   onClose: () => void;
   onChanged: () => void | Promise<void>;
+  onSelectItem?: (item: WorkItem) => void;
 };
 
 function dateLabel(value: string | null) {
@@ -51,7 +41,7 @@ const visualAssetTypes: Array<{ value: WorkItemAssetType; label: string }> = [
   { value: "validation_recording", label: "Validation recording" },
 ];
 
-export function ItemDrawer({ item, items, stages, dependencies, opened, onClose, onChanged }: Props) {
+export function ItemDrawer({ item, items, stages, dependencies, opened, onClose, onChanged, onSelectItem }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [owner, setOwner] = useState("");
@@ -68,6 +58,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [evidence, setEvidence] = useState<WorkItemEvidence[]>([]);
   const [comments, setComments] = useState<WorkItemComment[]>([]);
+  const [registerEntries, setRegisterEntries] = useState<WorkItemRegisterEntry[]>([]);
   const [assets, setAssets] = useState<WorkItemAsset[]>([]);
   const [visualEvidenceRequired, setVisualEvidenceRequired] = useState(false);
   const [interactionEvidenceRequired, setInteractionEvidenceRequired] = useState(false);
@@ -113,6 +104,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     setActivity([]);
     setEvidence([]);
     setComments([]);
+    setRegisterEntries([]);
     setAssets([]);
     void Promise.all([
       item.kind === "story" ? api.workItemContext(item.id) : Promise.resolve(null),
@@ -121,13 +113,15 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
       api.workItemEvidence(item.id),
       api.workItemComments(item.id),
       api.workItemAssets(item.id),
-    ]).then(([context, nextDesignRequirements, nextActivity, nextEvidence, nextComments, nextAssets]) => {
+      item.kind === "story" || item.kind === "feature" ? api.workItemRegisterEntries(item.id) : Promise.resolve([]),
+    ]).then(([context, nextDesignRequirements, nextActivity, nextEvidence, nextComments, nextAssets, nextRegisterEntries]) => {
       setWorkContext(context);
       setDesignCompletionRequirements(nextDesignRequirements);
       setActivity(nextActivity);
       setEvidence(nextEvidence);
       setComments(nextComments);
       setAssets(nextAssets);
+      setRegisterEntries(nextRegisterEntries);
     }).catch(() => {
       setWorkContext(null);
       setDesignCompletionRequirements([]);
@@ -135,6 +129,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
       setEvidence([]);
       setComments([]);
       setAssets([]);
+      setRegisterEntries([]);
     });
     setNewTaskTitle("");
     setNewComment("");
@@ -149,6 +144,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
   const itemById = useMemo(() => new Map(items.map((entry) => [entry.id, entry])), [items]);
   if (!item) return null;
 
+  const childStories = items.filter((entry) => entry.kind === "story" && entry.parent_id === item.id);
   const childTasks = items.filter((entry) => entry.kind === "task" && entry.parent_id === item.id);
   const inheritedPrerequisiteIds = item.kind === "story" && item.parent_id
     ? dependencies.filter((dependency) => dependency.work_item_id === item.parent_id).map((dependency) => dependency.depends_on_work_item_id)
@@ -426,6 +422,8 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     </section>
     <ClaimControl item={item} onChanged={onChanged} />
 
+    {item.kind === "feature" && <FeatureStories stories={childStories} stages={stages} onSelect={onSelectItem} />}
+
     {item.kind === "story" && <section className="record-block">
       <div className="record-block-title">Tasks <span>{childTasks.filter((task) => task.progress === "completed").length} / {childTasks.length}</span></div>
       <div className="record-task-list">{childTasks.map((task) => <div className={task.progress === "completed" ? "record-task-completed" : undefined} key={task.id}><span className={task.progress === "completed" ? "done" : ""}>{task.progress === "completed" ? "✓" : ""}</span><div><strong>{task.title}</strong><small>{task.item_key} · {task.execution_state?.replaceAll("_", " ") ?? task.progress.replaceAll("_", " ")}</small></div>{task.progress !== "completed" && <ActionIcon aria-label={`Complete task ${task.title}`} loading={completingTaskId === task.id} onClick={() => void completeTask(task)}><IconCheck size={16} /></ActionIcon>}</div>)}</div>
@@ -639,7 +637,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
       })}</div> : <p className="record-muted">No activity has been recorded.</p>}
     </section>
 
-    <section className="record-block record-register"><div className="record-block-title">Project decisions, issues and risks</div><Link to={`/projects/${item.project_id}#project-record`}>Open project register <IconArrowRight size={16} stroke={1.5} /></Link></section>
+    {(item.kind === "story" || item.kind === "feature") && <RelatedRegisterEntries entries={registerEntries} />}
 
     <div className="record-save-bar"><span>Updated {new Date(item.updated_at).toLocaleString()}</span><Button loading={saving} disabled={canEditAcceptance && !acceptanceValid} onClick={save}>Save changes</Button></div>
     <Modal opened={Boolean(activeVisual)} onClose={() => setActiveVisual(null)} size="min(1120px, 96vw)" centered overlayProps={{ backgroundOpacity: 0.72, blur: 2 }} title={activeVisual ? activeVisual.caption || activeVisual.asset_type.replaceAll("_", " ") : "Visual"} classNames={{ root: "visual-lightbox" }}>
