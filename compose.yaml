@@ -1,0 +1,127 @@
+name: agent-boards
+
+x-agent-boards-labels: &agent-boards-labels
+  com.datashow.application.stack: agent-boards
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/postgres.Containerfile
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: agentboards
+      POSTGRES_USER: agentboards
+      POSTGRES_PASSWORD: agentboards
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentboards -d agentboards"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    labels: *agent-boards-labels
+
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: agentboards
+    volumes:
+      - ./database/migrations:/migrations:ro
+    command:
+      - /bin/sh
+      - -ec
+      - for migration in /migrations/*.sql; do psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -f "$$migration"; done
+    labels: *agent-boards-labels
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.12
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://authenticator:postgrest@db:5432/agentboards
+      PGRST_DB_SCHEMAS: api
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_SERVER_PORT: 3000
+    labels: *agent-boards-labels
+
+  intelligence:
+    build:
+      context: .
+      dockerfile: docker/repo-intelligence.Containerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGREST_URL: http://postgrest:3000
+      PORT: 8081
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes:
+      - repositories:/data/repositories
+    labels: *agent-boards-labels
+
+  mcp:
+    build:
+      context: .
+      dockerfile: docker/mcp.Containerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      intelligence:
+        condition: service_started
+    environment:
+      POSTGREST_URL: http://postgrest:3000
+      REPO_INTELLIGENCE_URL: http://intelligence:8081
+      PORT: 8080
+    volumes:
+      - uploads:/data/uploads
+    labels: *agent-boards-labels
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Containerfile
+    depends_on:
+      postgrest:
+        condition: service_started
+      mcp:
+        condition: service_started
+    environment:
+      VITE_REST_PROXY: http://postgrest:3000
+      VITE_MCP_PROXY: http://mcp:8080
+      VITE_HMR_CLIENT_PORT: ${AGENT_BOARDS_PORT:-4173}
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./apps/web/src:/app/src
+    labels: *agent-boards-labels
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway.Containerfile
+    depends_on:
+      web:
+        condition: service_started
+      mcp:
+        condition: service_started
+      intelligence:
+        condition: service_started
+      postgrest:
+        condition: service_started
+    environment:
+      WEB_HOST: web
+      REST_HOST: postgrest
+      MCP_HOST: mcp
+      INTELLIGENCE_HOST: intelligence
+    ports:
+      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4173}:80"
+    labels: *agent-boards-labels
+
+volumes:
+  postgres-data:
+  repositories:
+  uploads:

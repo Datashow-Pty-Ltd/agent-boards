@@ -1,0 +1,30 @@
+{
+  "name": "agent-boards",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.26.1",
+  "scripts": {
+    "build": "pnpm --filter @agent-boards/web build && pnpm --filter @agent-boards/mcp build && pnpm --filter @agent-boards/repo-intelligence build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "dev:web": "pnpm --filter @agent-boards/web dev",
+    "dev:mcp": "pnpm --filter @agent-boards/mcp dev",
+    "dev:intelligence": "pnpm --filter @agent-boards/repo-intelligence dev",
+    "apple:build": "./scripts/stack.sh build",
+    "apple:up": "./scripts/stack.sh up",
+    "apple:down": "./scripts/stack.sh down",
+    "apple:status": "./scripts/stack.sh status",
+    "apple:logs": "./scripts/stack.sh logs",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up --build -d --wait",
+    "docker:down": "docker compose down",
+    "docker:status": "docker compose ps",
+    "docker:logs": "docker compose logs --tail=100 -f",
+    "test:live": "pnpm --filter @agent-boards/mcp test:live",
+    "test:claude": "./scripts/claude-smoke.sh",
+    "check:limits": "node scripts/check-source-limits.mjs",
+    "audit:prod": "pnpm audit --prod --audit-level high",
+    "release:check": "pnpm check:limits && pnpm typecheck && pnpm test && pnpm build && pnpm audit:prod",
+    "release:archive": "./scripts/create-source-archive.sh"
+  }
+}

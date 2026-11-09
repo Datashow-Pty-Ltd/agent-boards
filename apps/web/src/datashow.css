@@ -1,0 +1,431 @@
+/* Datashow design system — tokens and base rules for Ringmaster.
+   Source: design_handoff_ringmaster_restyle/design_system (tokens/*.css, styles.css).
+   Fonts are linked from root.tsx (IBM Plex trio); no @import here. */
+
+:root {
+  /* surfaces */
+  --c-canvas: #ffffff;
+  --c-panel: #ffffff;
+  --c-panel-2: #f4f3f0;
+
+  /* ink */
+  --c-ink: #1a1815;
+  --c-ink-2: #45413a;
+  --c-ink-3: #837e74;
+  --c-ink-4: #bfbab0;
+
+  /* hairlines */
+  --c-hair: #d9d4ca;
+  --c-hair-2: #e8e4db;
+  --c-hair-3: #f2efe9;
+
+  /* accent — live state, active marker, running work. Nothing decorative. */
+  --c-accent: #226f74;
+  --c-accent-alt: #3d6c44;
+
+  /* alert — blocked states, over-limit figures, rising-cost warnings */
+  --c-alert: #8b2440;
+
+  /* control-scope bracket colour in the workflow builder */
+  --c-control: #a8542f;
+
+  /* diverging scale: cool cheap -> cream median -> warm dear */
+  --c-d1: #155961;
+  --c-d2: #2e7e83;
+  --c-d3: #5fa1a0;
+  --c-d4: #a8c4c0;
+  --c-d5: #dfd6c4;
+  --c-d6: #e6c1c2;
+  --c-d7: #cd8693;
+  --c-d8: #b04f6e;
+  --c-d9: #8b2440;
+
+  /* categorical — desaturated, distinguishable, no rainbow */
+  --c-cat-1: #2e6f8a;
+  --c-cat-2: #6a6f5b;
+  --c-cat-3: #b6803d;
+  --c-cat-4: #6c4b7c;
+  --c-cat-5: #2f8268;
+  --c-cat-6: #8b465a;
+  --c-cat-7: #a85d3a;
+  --c-cat-8: #4a5a72;
+
+  /* semantic aliases — prefer these in component code */
+  --text-strong: var(--c-ink);
+  --text-body: var(--c-ink-2);
+  --text-label: var(--c-ink-3);
+  --text-faint: var(--c-ink-4);
+  --surface-page: var(--c-canvas);
+  --surface-card: var(--c-panel);
+  --surface-inset: var(--c-panel-2);
+  --border-strong: var(--c-ink);
+  --border-mid: var(--c-hair);
+  --border-default: var(--c-hair-2);
+  --border-subtle: var(--c-hair-3);
+
+  /* deltas — a fall is teal, a rise is magenta, neither is ever red/green */
+  --data-fall: var(--c-d2);
+  --data-rise: var(--c-d8);
+  --data-flat: var(--c-ink-3);
+
+  /* fonts */
+  --f-sans:
+    "IBM Plex Sans", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --f-serif: "IBM Plex Serif", Georgia, serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* sizes */
+  --fz-display: 96px;
+  --fz-figure: 52px;
+  --fz-page-title: clamp(32px, 3vw, 44px);
+  --fz-section-title: clamp(28px, 3.2vw, 38px);
+  --fz-h2: 36px;
+  --fz-headline: 28px;
+  --fz-card-title: 19px;
+  --fz-lede: 16px;
+  --fz-body: 14.5px;
+  --fz-body-sm: 13.5px;
+  --fz-mono: 11px;
+  --fz-label: 10.5px;
+  --fz-label-sm: 9.5px;
+  --fz-tick: 9px;
+
+  /* line heights */
+  --lh-display: 0.92;
+  --lh-figure: 1;
+  --lh-h2: 1.05;
+  --lh-title: 1.2;
+  --lh-body: 1.5;
+  --lh-dense: 1.6;
+
+  /* tracking — display is tightened, labels are opened */
+  --ls-display: -0.035em;
+  --ls-figure: -0.03em;
+  --ls-h2: -0.025em;
+  --ls-body: -0.005em;
+  --ls-mono: 0.04em;
+  --ls-label: 0.08em;
+  --ls-kicker: 0.14em;
+
+  /* weights — 500 is the working heading weight, 600 is held in reserve */
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 600;
+
+  /* page geometry — one measure for every route.
+     Every page is 1380px at its widest and shares the same gutter, which
+     narrows with the viewport so the same shell works on a phone. */
+  --page-max: 1380px;
+  --page-max-list: var(--page-max);
+  --page-pad: clamp(16px, 3.6vw, 44px);
+  --page-pad-top: clamp(22px, 2.8vw, 36px);
+  --page-pad-bottom: clamp(40px, 6vw, 64px);
+
+  /* rules — colour, not thickness, signals the size of a division */
+  --rule-w: 1px;
+  --radius-0: 0;
+  --radius-1: 1px;
+}
+
+/* The root keeps the browser's 16px so rem-based component geometry
+   (Mantine spacing, measures) stays true; the body carries the type size. */
+html,
+body {
+  margin: 0;
+  background: var(--surface-page);
+  font-family: var(--f-sans);
+  color: var(--text-strong);
+  letter-spacing: var(--ls-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-size: var(--fz-body);
+  line-height: var(--lh-body);
+}
+
+::selection {
+  background: var(--c-d5);
+  color: var(--c-ink);
+}
+
+:focus-visible {
+  outline: 1px solid var(--c-ink);
+  outline-offset: 2px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--c-ink-4);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono-label {
+  font-family: var(--f-mono);
+  font-size: var(--fz-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-label);
+}
+
+/* ── Page measure ──────────────────────────────────────────────────────
+   One shell for every route. `.ds-page` is the standard measure; the
+   `--wide` modifier removes the cap for genuinely full-bleed working
+   surfaces (the board, the workflow editor) while keeping the same gutter,
+   so a page never changes its left edge as you move around the app. */
+.ds-page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  box-sizing: border-box;
+  padding: var(--page-pad-top) var(--page-pad) var(--page-pad-bottom);
+}
+.ds-page--wide {
+  max-width: none;
+}
+.ds-page--flush {
+  padding-block: 0;
+}
+
+/* Hairline tables scroll sideways below their natural measure, bleeding to
+   the screen edge so the scroll reads as the table rather than the page. */
+.ds-table-scroll {
+  overflow-x: auto;
+  margin-inline: calc(var(--page-pad) * -1);
+  padding-inline: var(--page-pad);
+  scrollbar-width: thin;
+}
+
+/* App shell. Below 900px the navigation and the assistant float over the
+   page instead of dividing it, so the content keeps the full measure. */
+@media (max-width: 900px) {
+  .ds-shell-nav,
+  .ds-shell-rail {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    height: 100dvh;
+    z-index: 40;
+  }
+  .ds-shell-nav {
+    left: 0;
+  }
+  .ds-shell-rail {
+    right: 0;
+    width: min(340px, 92vw) !important;
+  }
+}
+
+/* Mantine 9 made the "light" variant a solid fill. This system has no filled
+   chips or buttons, so anything still asking for light lands on the hairline
+   treatment instead of a coloured block. Filled and outline are untouched. */
+.mantine-Badge-root[data-variant="light"],
+.mantine-Button-root[data-variant="light"],
+.mantine-ActionIcon-root[data-variant="light"],
+.mantine-ThemeIcon-root[data-variant="light"] {
+  background: transparent;
+  color: var(--c-ink-2);
+  border: 1px solid var(--c-hair);
+}
+.mantine-Alert-root[data-variant="light"] {
+  background: var(--surface-inset);
+  border-left: 3px solid var(--alert-color, var(--c-ink));
+}
+
+/* ── Gutter rail ───────────────────────────────────────────────────────
+   The sticky right column, in the docs shell's table-of-contents idiom: it
+   holds its position while the page scrolls and its items hang off a single
+   hairline rule, with the current item marked by an accent border. Below the
+   two-column breakpoint it stops floating and becomes a collapsed summary
+   beneath the content. */
+.ds-rail {
+  position: sticky;
+  top: calc(52px + 20px);
+  align-self: start;
+  max-height: calc(100dvh - 52px - 44px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ds-rail-title {
+  margin-bottom: 14px;
+}
+
+.ds-rail-items {
+  border-top: 1px solid var(--border-default);
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+.ds-rail-control {
+  display: block;
+  width: 100%;
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  border-radius: 0;
+  padding: 13px 0;
+  cursor: pointer;
+}
+.ds-rail-control:hover {
+  background: var(--surface-inset);
+}
+/* Rail targets land clear of the 52px sticky top bar when scrolled to. */
+[data-rail-anchor] {
+  scroll-margin-top: calc(52px + 20px);
+}
+
+/* The active entry carries a small ink square before its numeral. */
+.ds-rail-marker {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  margin-top: 5px;
+  background: transparent;
+}
+.ds-rail-control[data-active] .ds-rail-marker {
+  background: var(--c-ink);
+}
+
+/* The mobile disclosure. Hidden while the rail floats. */
+.ds-rail-toggle {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-default);
+  cursor: pointer;
+  text-align: start;
+}
+
+@media (max-width: 1100px) {
+  .ds-rail {
+    position: static;
+    max-height: none;
+    margin-top: 36px;
+  }
+  .ds-rail-title {
+    display: none;
+  }
+  .ds-rail-toggle {
+    display: flex;
+  }
+  .ds-rail-items {
+    display: none;
+    overflow-y: visible;
+    padding-bottom: 8px;
+  }
+  .ds-rail-items[data-open] {
+    display: block;
+  }
+}
+
+/* Row-link hover used by the hairline list tables. */
+.ds-row-link {
+  text-decoration: none;
+  color: inherit;
+}
+.ds-row-link:hover {
+  background: var(--surface-inset);
+}
+
+/* Quiet ink-on-hover for mono text buttons. */
+.ds-quiet-btn {
+  transition: none;
+}
+.ds-quiet-btn:hover {
+  color: var(--c-ink) !important;
+}
+
+/* Bordered mono button — border steps to ink on hover. */
+.ds-hair-btn:hover {
+  border-color: var(--c-ink) !important;
+}
+
+/* Filled-ink mono button — steps one ink lighter when pressed/hovered. */
+.ds-ink-btn:hover {
+  background: var(--c-ink-2) !important;
+  border-color: var(--c-ink-2) !important;
+}
+
+/* Sidebar / plain links: ink, tealing on hover. */
+.ds-link {
+  color: var(--c-ink);
+  text-decoration: none;
+}
+.ds-link:hover {
+  color: var(--c-accent);
+}
+
+/* Board card hover: hairline steps to ink. Never shadow, fill, or lift. */
+.ds-card-hover:hover {
+  border-color: var(--c-ink) !important;
+}
+
+/* Search / mono inputs: hairline that steps to ink on focus. */
+.ds-input:focus {
+  border-color: var(--c-ink) !important;
+  outline: none;
+}
+
+/* Working dot: the heartbeat idiom — a smooth fade down and back (lub), a
+   softer second beat (dub), then a long rest. ease-in-out makes each beat a
+   swell rather than a flash; an expanding ring read as noise at indicator
+   sizes. */
+@keyframes ds-working {
+  0% {
+    opacity: 1;
+  }
+  14% {
+    opacity: 0.35;
+  }
+  30% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.5;
+  }
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.ds-working {
+  animation: ds-working 2.4s ease-in-out infinite;
+}
+
+/* A live indicator must stay live for assistive tech — but the motion itself
+   is decoration, so reduced-motion gets a steady halo instead of a pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-working {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(34, 111, 116, 0.25);
+  }
+}
+
+/* Reference drop-zone: dashed hairline stepping to ink; inset when armed. */
+.ds-dropzone {
+  border: 1px dashed var(--c-hair);
+  background: transparent;
+  transition: none;
+}
+.ds-dropzone:hover {
+  border-color: var(--c-ink-3);
+}
+.ds-dropzone[data-armed="true"] {
+  border-color: var(--c-ink);
+  background: var(--c-panel-2);
+}
