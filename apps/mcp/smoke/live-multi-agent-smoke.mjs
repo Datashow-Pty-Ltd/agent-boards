@@ -30,7 +30,7 @@ function resultJson(result) {
   return JSON.parse(text);
 }
 
-test("three MCP workers claim and move three different stories concurrently", async () => {
+test("registered Codex and Claude workers claim and move distinct stories concurrently", async () => {
   const suffix = `${Date.now()}`.slice(-8);
   const projectKey = `MW${suffix}`;
   const [project] = await api("/rpc/create_project", {
@@ -42,12 +42,18 @@ test("three MCP workers claim and move three different stories concurrently", as
       project_owner: "Release test",
     }),
   });
-  const workerNames = ["Codex Alpha", "Claude Beta", "Codex Gamma"];
+  const workerSpecs = [
+    { handle: `codex-alpha-${suffix}`, displayName: "Codex Alpha", clientType: "codex" },
+    { handle: `claude-beta-${suffix}`, displayName: "Claude Beta", clientType: "claude" },
+    { handle: `codex-gamma-${suffix}`, displayName: "Codex Gamma", clientType: "codex" },
+    { handle: `codex-delta-${suffix}`, displayName: "Codex Delta", clientType: "codex" },
+  ];
   const clients = [];
+  const identities = [];
 
   try {
     const [board] = await api(`/boards?project_id=eq.${project.id}&select=id`);
-    for (let index = 0; index < workerNames.length; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       await api("/rpc/create_backlog_item", {
         method: "POST",
         body: JSON.stringify({
@@ -70,28 +76,63 @@ test("three MCP workers claim and move three different stories concurrently", as
       });
     }
 
-    for (const workerName of workerNames) {
-      const client = new Client({ name: workerName, version: "1.0.0" });
+    for (const worker of workerSpecs) {
+      const client = new Client({ name: worker.displayName, version: "1.0.0" });
       await client.connect(new StreamableHTTPClientTransport(new URL(`${gatewayUrl}/mcp`)));
       clients.push(client);
+      identities.push(resultJson(await client.callTool({
+        name: "register_worker",
+        arguments: { projectId: project.id, ...worker },
+      })));
     }
 
-    const claims = await Promise.all(clients.map((client, index) => client.callTool({
+    assert.equal(new Set(identities.map((identity) => identity.worker_id)).size, 4, "worker IDs must be immutable and distinct");
+    assert.ok(identities.every((identity) => identity.resume_token?.length >= 32), "registration must return a one-time private token");
+    const resumed = resultJson(await clients[1].callTool({
+      name: "resume_worker",
+      arguments: { workerId: identities[1].worker_id, resumeToken: identities[1].resume_token },
+    }));
+    assert.equal(resumed.handle, workerSpecs[1].handle, "Claude should resume its registered identity");
+    assert.match(await apiFailure("/rpc/register_agent_worker", {
+      method: "POST",
+      body: JSON.stringify({
+        target_project_id: project.id,
+        requested_handle: workerSpecs[0].handle,
+        requested_display_name: "Impostor",
+        requested_client_type: "other",
+      }),
+    }), /already registered/i, "a project handle cannot be registered twice");
+    assert.match(await apiFailure("/rpc/claim_next_work_package", {
+      method: "POST",
+      body: JSON.stringify({ target_project_id: project.id, agent_name: "Unregistered Worker" }),
+    }), /permission denied/i, "free-form worker names must not bypass registration");
+
+    const claims = await Promise.all(clients.slice(0, 3).map((client, index) => client.callTool({
       name: "claim_next_ready_work_item",
-      arguments: { projectId: project.id, agentName: workerNames[index] },
+      arguments: {
+        projectId: project.id,
+        workerId: identities[index].worker_id,
+        resumeToken: identities[index].resume_token,
+      },
     })));
     const packages = claims.map(resultJson);
     const stories = packages.map((payload) => payload.work_package.story);
 
     assert.equal(new Set(stories.map((story) => story.id)).size, 3, "every worker should receive a different story");
     stories.forEach((story, index) => {
-      assert.equal(story.owner, workerNames[index], "first claim should assign durable ownership");
-      assert.equal(story.assignee, workerNames[index], "claim should record the active worker");
+      assert.equal(story.owner, workerSpecs[index].handle, "first claim should assign durable ownership to the registered handle");
+      assert.equal(story.assignee, workerSpecs[index].handle, "claim should record the registered active worker");
+      assert.equal(story.assignee_worker_id, identities[index].worker_id, "claim must bind the immutable worker ID");
     });
 
-    await Promise.all(clients.map((client, index) => client.callTool({
+    await Promise.all(clients.slice(0, 3).map((client, index) => client.callTool({
       name: "move_work_item",
-      arguments: { workItemId: stories[index].id, stage: "analyse", actor: workerNames[index] },
+      arguments: {
+        workItemId: stories[index].id,
+        stage: "analyse",
+        workerId: identities[index].worker_id,
+        resumeToken: identities[index].resume_token,
+      },
     })));
 
     const moved = await api(`/work_items?project_id=eq.${project.id}&kind=eq.story&select=id,owner,assignee,stage_id`);
@@ -101,9 +142,17 @@ test("three MCP workers claim and move three different stories concurrently", as
 
     const heartbeat = resultJson(await clients[0].callTool({
       name: "heartbeat_work_item",
-      arguments: { workItemId: stories[0].id, agentName: workerNames[0] },
+      arguments: { workItemId: stories[0].id, workerId: identities[0].worker_id, resumeToken: identities[0].resume_token },
     }));
-    assert.equal(heartbeat[0].assignee, workerNames[0], "the active worker should renew its own claim");
+    assert.equal(heartbeat[0].assignee, workerSpecs[0].handle, "the active worker should renew its own claim");
+    assert.match(await apiFailure("/rpc/heartbeat_work_item_as_worker", {
+      method: "POST",
+      body: JSON.stringify({
+        target_work_item_id: stories[0].id,
+        target_worker_id: identities[0].worker_id,
+        resume_token: "0".repeat(64),
+      }),
+    }), /credentials are invalid/i, "an incorrect token must not impersonate a registered worker");
 
     const activeStatus = resultJson(await clients[0].callTool({
       name: "get_work_item_claim_status",
@@ -112,7 +161,7 @@ test("three MCP workers claim and move three different stories concurrently", as
     assert.equal(activeStatus[0].takeover_eligible, false, "a fresh claim cannot be taken over");
     assert.match(await apiFailure("/rpc/authorize_idle_claim_takeover", {
       method: "POST",
-      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_name: "Codex Delta", human_name: "Release test" }),
+      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_id: identities[3].worker_id, human_name: "Release test" }),
     }), /still active/i);
 
     const staleTimestamp = new Date(Date.now() - 20 * 60_000).toISOString();
@@ -122,14 +171,20 @@ test("three MCP workers claim and move three different stories concurrently", as
     });
     const [takenOver] = await api("/rpc/authorize_idle_claim_takeover", {
       method: "POST",
-      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_name: "Codex Delta", human_name: "Release test" }),
+      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_id: identities[3].worker_id, human_name: "Release test" }),
     });
-    assert.equal(takenOver.owner, "Codex Delta", "human takeover should transfer durable ownership");
-    assert.equal(takenOver.assignee, "Codex Delta", "human takeover should transfer the active claim");
-    assert.match(await apiFailure("/rpc/move_work_item", {
+    assert.equal(takenOver.owner, workerSpecs[3].handle, "human takeover should transfer durable ownership");
+    assert.equal(takenOver.assignee, workerSpecs[3].handle, "human takeover should transfer the active claim");
+    assert.equal(takenOver.assignee_worker_id, identities[3].worker_id, "takeover must bind the new immutable worker ID");
+    assert.match(await apiFailure("/rpc/move_work_item_as_worker", {
       method: "POST",
-      body: JSON.stringify({ target_work_item_id: stories[0].id, target_stage_slug: "plan", actor_name: workerNames[0] }),
-    }), /Only the active worker Codex Delta/i, "the disconnected worker must be fenced after transfer");
+      body: JSON.stringify({
+        target_work_item_id: stories[0].id,
+        target_stage_slug: "plan",
+        target_worker_id: identities[0].worker_id,
+        resume_token: identities[0].resume_token,
+      }),
+    }), /different registered worker/i, "the disconnected worker must be fenced after transfer");
 
     await api(`/work_items?id=eq.${stories[1].id}`, {
       method: "PATCH",
@@ -141,7 +196,8 @@ test("three MCP workers claim and move three different stories concurrently", as
     });
     assert.equal(released.execution_state, "queued", "human release should return stale work to the queue");
     assert.equal(released.assignee, null, "released work should not retain a worker");
-    assert.equal(released.owner, workerNames[1], "releasing a claim should preserve durable ownership");
+    assert.equal(released.owner, workerSpecs[1].handle, "releasing a claim should preserve durable ownership");
+    assert.equal(released.assignee_worker_id, null, "released work should clear the immutable worker claim");
   } finally {
     await Promise.allSettled(clients.map((client) => client.close()));
     await api(`/projects?id=eq.${project.id}`, { method: "DELETE" });

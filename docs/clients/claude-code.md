@@ -28,6 +28,15 @@ The autonomous worker contract is discoverable from the MCP resources and
 skill. Claude and Codex receive the same focused work package and are subject
 to the same database gates.
 
+Before claiming work, each Claude or Codex session calls `register_worker` with
+a unique lowercase handle and its `clientType`. It retains the returned worker
+ID and one-time resume token privately for the session, verifies retained
+credentials with `resume_worker`, and supplies them to every claim, movement,
+heartbeat, block, and release call. The token must never be copied into chat,
+source files, comments, evidence, or logs. Separate Claude and Codex identities
+can then run against one project concurrently without sharing or colliding on a
+display name.
+
 The repository also includes `skills/agent-boards-worker/SKILL.md` for hosts
 that support explicit local skills. It mirrors the service contract but is not
 required for MCP discovery.

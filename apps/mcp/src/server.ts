@@ -23,7 +23,7 @@ import {
 import { serverInstructions } from "./serverInstructions.js";
 import { registerBoardSettingsTool } from "./boardSettingsTool.js";
 import { registerOwnershipTools } from "./ownershipTools.js";
-import { registerClaimLeaseTools } from "./claimLeaseTools.js";
+import { registerWorkerIdentityTools } from "./workerIdentityTools.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const app = express();
@@ -98,7 +98,7 @@ function buildServer() {
 
   registerBoardSettingsTool(server);
   registerOwnershipTools(server);
-  registerClaimLeaseTools(server);
+  registerWorkerIdentityTools(server);
 
   server.registerTool(
     "list_service_capabilities",
@@ -520,31 +520,6 @@ function buildServer() {
   );
 
   server.registerTool(
-    "move_work_item",
-    {
-      description: "Move a card by one allowed step in the governed delivery path and record the activity. Skipping required stages is rejected by PostgreSQL.",
-      inputSchema: {
-        workItemId: z.string().uuid(),
-        stage: z.enum(["backlog", "analyse", "plan", "build", "validate", "review", "merge", "post_merge", "done"]),
-        actor: z.string().min(1).max(120),
-        summary: z.string().max(500).optional(),
-      },
-    },
-    async ({ workItemId, stage, actor, summary }) =>
-      textResult(
-        await rest("/rpc/move_work_item", {
-          method: "POST",
-          body: JSON.stringify({
-            target_work_item_id: workItemId,
-            target_stage_slug: stage,
-            actor_name: actor,
-            event_summary: summary ?? null,
-          }),
-        }),
-      ),
-  );
-
-  server.registerTool(
     "update_work_item",
     {
       description: "Update the mutable planning fields on a card.",
@@ -741,21 +716,6 @@ function buildServer() {
   );
 
   server.registerTool(
-    "claim_next_ready_work_item",
-    {
-      description: "Atomically claim one dependency-ready story for this uniquely named worker. Parallel workers receive different stories. Work owned by this worker is preferred; otherwise an unowned story is claimed and ownership is assigned. Call again after every Done or Blocked outcome.",
-      inputSchema: {
-        projectId: z.string().uuid(),
-        agentName: z.string().min(1).max(120),
-      },
-    },
-    async ({ projectId, agentName }) => textResult(await attachRepositoryToContext(await rest("/rpc/claim_next_work_package", {
-        method: "POST",
-        body: JSON.stringify({ target_project_id: projectId, agent_name: agentName }),
-      }), projectId)),
-  );
-
-  server.registerTool(
     "get_work_item_context",
     {
       description: "Get the focused story work package and the acceptance criteria required to promote it from its current stage.",
@@ -879,53 +839,6 @@ function buildServer() {
         critique_notes: notes,
         actor_name: actor,
       }),
-    })),
-  );
-
-  server.registerTool(
-    "claim_work_item",
-    {
-      description: "Atomically claim a ready story for one uniquely named worker. Parallel workers cannot claim the same story, and an unowned story becomes owned by its first worker.",
-      inputSchema: {
-        workItemId: z.string().uuid(),
-        agentName: z.string().min(1).max(120),
-      },
-    },
-    async ({ workItemId, agentName }) => textResult(await rest("/rpc/claim_work_item", {
-      method: "POST",
-      body: JSON.stringify({ target_work_item_id: workItemId, agent_name: agentName }),
-    })),
-  );
-
-  server.registerTool(
-    "block_work_item",
-    {
-      description: "Mark an in-progress work item Blocked with a concrete reason and remove it from the autonomous ready queue. The agent should then claim the next ready item.",
-      inputSchema: {
-        workItemId: z.string().uuid(),
-        agentName: z.string().min(1).max(120),
-        reason: z.string().min(1).max(1000),
-      },
-    },
-    async ({ workItemId, agentName, reason }) => textResult(await rest("/rpc/block_work_item", {
-      method: "POST",
-      body: JSON.stringify({ target_work_item_id: workItemId, agent_name: agentName, reason }),
-    })),
-  );
-
-  server.registerTool(
-    "release_work_item",
-    {
-      description: "Return running work to the ready queue when an agent must stop without blocking it. Do not use this for a real dependency or human decision; use block_work_item instead.",
-      inputSchema: {
-        workItemId: z.string().uuid(),
-        agentName: z.string().min(1).max(120),
-        reason: z.string().max(1000).optional(),
-      },
-    },
-    async ({ workItemId, agentName, reason }) => textResult(await rest("/rpc/release_work_item", {
-      method: "POST",
-      body: JSON.stringify({ target_work_item_id: workItemId, agent_name: agentName, reason: reason ?? null }),
     })),
   );
 

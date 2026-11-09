@@ -12,10 +12,11 @@ Use the `agent-boards` MCP server as the authoritative project record and queue.
 - Identify the requested Agent Boards project with `list_projects`; do not guess from a similarly named repository.
 - Confirm the active workspace is the repository in which the claimed work should be implemented.
 - Do not claim work for a read-only request such as reviewing, explaining, or reporting backlog status.
-- Use `claim_next_ready_work_item` as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively.
-- Use a stable worker name that is unique among concurrently connected agents. Pass that same name to claim, block, and release operations. Parallel workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story.
+- Register once for the project with `register_worker`, using a stable unique lowercase handle and the correct client type (`codex`, `claude`, or `other`). Retain the returned immutable worker ID and one-time resume token for this work session. If retained credentials already exist, verify them with `resume_worker` instead of registering again.
+- Treat the resume token as a private credential. Never put it in source files, comments, evidence, board records, logs, or user-facing output, and never use another worker's credentials. A duplicate handle must be resumed with its original credentials or replaced with a genuinely different handle.
+- Use `claim_next_ready_work_item` with the worker ID and resume token as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively. Pass the same credentials to claim, move, heartbeat, block, and release operations. Parallel Codex and Claude workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story.
 - Treat `owner` as durable accountability and `assignee` as the current claim holder. Do not overwrite another active worker's claim. Use `set_work_item_owner` when a person explicitly assigns or transfers responsibility.
-- Treat a claim as a renewable lease. Call `heartbeat_work_item` with the claimed story ID and the same stable worker name at least every five minutes during long-running work, including while waiting on lengthy builds or test suites. Never take over another worker's idle claim yourself; only a person may authorize a transfer or release in Agent Boards.
+- Treat a claim as a renewable lease. Call `heartbeat_work_item` with the claimed story ID and registered worker credentials at least every five minutes during long-running work, including while waiting on lengthy builds or test suites. Never take over another worker's idle claim yourself; only a person may authorize a transfer or release in Agent Boards.
 
 ## Work loop
 
