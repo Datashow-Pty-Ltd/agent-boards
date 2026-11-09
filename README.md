@@ -103,13 +103,20 @@ The visible Kanban groups the governed stages into five action lanes:
 overview delivery summary consumes the same shared lane definition as the
 board, while the database keeps the finer-grained evidence gates.
 
+That five-lane layout is a default, not a required presentation. Each project
+can group adjacent governed stages into anything from one compact lane to nine
+separate lanes. Bucket names, purpose, responsible actor, WIP limits, and
+deterministic exit criteria are also project-specific. This lets a team make
+the board as simple or as detailed as the delivery needs without weakening the
+audit trail.
+
 The first browser connection opens a short, dismissible overview of the
 project record, governed stages, agent loop, and evidence model. It can be
 replayed from Project settings. Settings are project-scoped: maintainers can
 group adjacent governed stages into named board buckets and edit their purpose,
 responsible actor, WIP limit, and deterministic exit criteria. Stage identity,
-order, and allowed transitions remain database-protected and are not editable
-presentation preferences.
+order, and allowed transitions remain database-protected in the current alpha:
+projects cannot yet add, remove, reorder, or bypass governed stages.
 
 Projects can be archived and restored through the UI, REST RPCs, or MCP.
 Archived projects leave the active portfolio and selector but keep their board,
@@ -354,7 +361,9 @@ Board configuration is exposed through
 `POST /api/rpc/update_board_stage_settings`. The RPC accepts a stage ID, bucket
 title, purpose, responsible actor, optional WIP limit, exit-criteria array, and
 actor name. It records the change in project activity without exposing stage
-order or transition mutation.
+order or transition mutation. Giving adjacent stages the same bucket title
+collapses them into one visible lane; giving every stage a distinct bucket
+title exposes the full nine-lane workflow.
 
 Design-only completion is exposed through
 `POST /api/rpc/design_card_completion_requirements` and

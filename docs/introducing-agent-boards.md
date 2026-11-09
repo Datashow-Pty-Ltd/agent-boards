@@ -86,10 +86,16 @@ For readability, the Kanban groups those gates into five action-oriented lanes:
 ![Agent Boards Kanban showing feature groups and stories across the five action lanes](assets/agent-boards-board.png)
 
 The compact board gives a human an immediate view of the project. Underneath,
-the finer-grained stages preserve the delivery controls and audit history. A
-project can customise how adjacent stages are grouped and describe each lane's
-purpose, responsible actor, WIP limit and exit criteria, but it cannot reorder
-or bypass the protected workflow.
+the finer-grained stages preserve the delivery controls and audit history. The
+five lanes are only the default: a project can combine adjacent stages into a
+single compact lane or expose all nine stages as separate lanes. It can also
+customise each bucket's name, purpose, responsible actor, WIP limit and exit
+criteria. This makes the visible board as simple or as detailed as the team
+needs while retaining the same durable evidence model.
+
+The current alpha deliberately separates presentation flexibility from
+workflow authority. Projects cannot add, remove, reorder or bypass the nine
+protected stages; those transitions remain database-enforced.
 
 ## Promotion is earned with evidence
 
