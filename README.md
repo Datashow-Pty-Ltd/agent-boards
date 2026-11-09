@@ -38,6 +38,7 @@ projects. Stop the stack with `docker compose down`.
 
 Useful documentation:
 
+- [Introducing Agent Boards](docs/introducing-agent-boards.md)
 - [Architecture](docs/architecture.md)
 - [Docker and Apple Container build recipes](docs/container-recipes.md)
 - [Development and release checks](docs/development.md)
