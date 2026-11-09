@@ -1,8 +1,8 @@
-import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
+import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { WorkItem, WorkItemClaimStatus } from "../types";
+import type { AgentWorker, WorkItem, WorkItemClaimStatus } from "../types";
 
 type Props = {
   item: WorkItem;
@@ -17,8 +17,9 @@ function duration(seconds: number) {
 
 export function ClaimControl({ item, onChanged }: Props) {
   const [status, setStatus] = useState<WorkItemClaimStatus | null>(null);
+  const [workers, setWorkers] = useState<AgentWorker[]>([]);
   const [transferOpened, setTransferOpened] = useState(false);
-  const [worker, setWorker] = useState("");
+  const [workerId, setWorkerId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -27,25 +28,29 @@ export function ClaimControl({ item, onChanged }: Props) {
       return undefined;
     }
     let active = true;
+    void api.projectWorkers(item.project_id).then((next) => {
+      if (active) setWorkers(next);
+    }).catch(() => undefined);
     const load = () => void api.workItemClaimStatus(item.id).then((next) => {
       if (active) setStatus(next);
     }).catch(() => undefined);
     load();
     const timer = window.setInterval(load, 30_000);
     return () => { active = false; window.clearInterval(timer); };
-  }, [item.id, item.execution_state, item.assignee]);
+  }, [item.id, item.project_id, item.execution_state, item.assignee]);
 
   if (!status?.active_worker) return null;
 
   async function transfer() {
-    if (!worker.trim()) return;
+    if (!workerId) return;
+    const selectedWorker = workers.find((worker) => worker.worker_id === workerId);
     setSaving(true);
     try {
-      await api.authorizeIdleClaimTakeover(item.id, worker.trim());
+      await api.authorizeIdleClaimTakeover(item.id, workerId);
       setTransferOpened(false);
-      setWorker("");
+      setWorkerId(null);
       await onChanged();
-      notifications.show({ title: "Idle claim transferred", message: `${item.item_key} is now claimed by ${worker.trim()}`, color: "accent" });
+      notifications.show({ title: "Idle claim transferred", message: `${item.item_key} is now claimed by @${selectedWorker?.handle ?? "registered worker"}`, color: "accent" });
     } catch (error) {
       notifications.show({ title: "Claim could not be transferred", message: error instanceof Error ? error.message : String(error), color: "alert" });
     } finally { setSaving(false); }
@@ -78,8 +83,18 @@ export function ClaimControl({ item, onChanged }: Props) {
     <Modal opened={transferOpened} onClose={() => setTransferOpened(false)} title="Transfer idle claim" centered>
       <Stack>
         <Text size="sm">This records a human-authorized transfer from {status.active_worker}. The previous worker will no longer be able to move the card.</Text>
-        <TextInput label="New worker" value={worker} onChange={(event) => setWorker(event.currentTarget.value)} placeholder="Stable worker name" />
-        <Group justify="flex-end"><Button variant="subtle" onClick={() => setTransferOpened(false)}>Cancel</Button><Button loading={saving} disabled={!worker.trim()} onClick={() => void transfer()}>Authorize transfer</Button></Group>
+        <Select
+          label="Registered worker"
+          value={workerId}
+          onChange={setWorkerId}
+          data={workers.filter((worker) => worker.worker_id !== status.active_worker_id).map((worker) => ({
+            value: worker.worker_id,
+            label: `${worker.display_name} · @${worker.handle} · ${worker.client_type}`,
+          }))}
+          placeholder="Select an active worker"
+          searchable
+        />
+        <Group justify="flex-end"><Button variant="subtle" onClick={() => setTransferOpened(false)}>Cancel</Button><Button loading={saving} disabled={!workerId} onClick={() => void transfer()}>Authorize transfer</Button></Group>
       </Stack>
     </Modal>
   </section>;

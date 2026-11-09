@@ -13,6 +13,9 @@ gate.
   historical data repairs when a new release migration is deployed.
 - Added renewable claim leases, worker heartbeats, idle-claim visibility,
   human-authorized transfer or release, audit events, and stale-worker fencing.
+- Added persistent project-scoped worker identities for Codex, Claude, and
+  other MCP clients, with unique handles, immutable IDs, one-time private
+  resume tokens, authenticated claim operations, and registered-worker takeover.
 
 ## [0.1.0-alpha.1] - 2026-11-09
 

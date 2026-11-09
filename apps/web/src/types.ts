@@ -91,6 +91,7 @@ export interface WorkItem {
   blocked_reason: string | null;
   owner: string | null;
   assignee: string | null;
+  assignee_worker_id: string | null;
   claim_started_at: string | null;
   claim_heartbeat_at: string | null;
   due_date: string | null;
@@ -110,12 +111,24 @@ export interface WorkItemClaimStatus {
   work_item_id: string;
   owner: string | null;
   active_worker: string | null;
+  active_worker_id: string | null;
   execution_state: string | null;
   claim_started_at: string | null;
   last_heartbeat_at: string | null;
   idle_seconds: number;
   timeout_seconds: number;
   takeover_eligible: boolean;
+}
+export interface AgentWorker {
+  worker_id: string;
+  project_id: string;
+  handle: string;
+  display_name: string;
+  client_type: "codex" | "claude" | "other";
+  status: "active" | "revoked";
+  last_seen_at: string;
+  created_at: string;
+  active_claims: number;
 }
 export interface WorkItemDependency {
   work_item_id: string;
