@@ -393,6 +393,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     onClose={onClose}
     position="right"
     size="min(520px, 100vw)"
+    closeButtonProps={{ "aria-label": "Close work item" }}
     overlayProps={{ backgroundOpacity: 0.14 }}
     classNames={{ root: "record-drawer", header: "record-drawer-header", body: "record-drawer-body", content: "record-drawer-content" }}
     title={<div className="record-drawer-heading" tabIndex={-1} data-autofocus><div className="eyebrow">{item.item_key} · {stage?.title ?? item.kind}</div><h2>{item.title}</h2><div><span className={`state-dot ${item.execution_state ?? item.progress}`} />{item.execution_state?.replaceAll("_", " ") ?? item.progress.replaceAll("_", " ")}<i>·</i>{item.assignee ?? "Unassigned"}</div></div>}

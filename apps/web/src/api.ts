@@ -107,6 +107,27 @@ export const api = {
     ]);
     return { board: boards[0], stages, items, dependencies: [], assets: [] };
   },
+  boardSettings: async (projectId: string) => {
+    const boards = await request<Board[]>(`/boards?project_id=eq.${projectId}`);
+    if (!boards[0]) throw new Error("This project has no board.");
+    const stages = await request<Stage[]>(`/board_stages?board_id=eq.${boards[0].id}&order=position.asc`);
+    return { board: boards[0], stages };
+  },
+  updateBoardStageSettings: async (stageId: string, value: { bucketTitle: string; purpose: string; responsibleActor: string; wipLimit: number | null; exitCriteria: string[] }) => {
+    const stages = await request<Stage[]>("/rpc/update_board_stage_settings", {
+      method: "POST",
+      body: JSON.stringify({
+        target_stage_id: stageId,
+        stage_bucket_title: value.bucketTitle,
+        stage_purpose: value.purpose,
+        stage_responsible_actor: value.responsibleActor,
+        stage_wip_limit: value.wipLimit,
+        stage_exit_criteria: value.exitCriteria,
+        actor_name: "You",
+      }),
+    });
+    return stages[0] ?? null;
+  },
   boardDependencies: (items: WorkItem[]) => items.length
     ? request<WorkItemDependency[]>(`/work_item_dependencies?work_item_id=in.(${items.map((item) => item.id).join(",")})&order=created_at.asc`)
     : Promise.resolve([]),

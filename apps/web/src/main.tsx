@@ -21,6 +21,7 @@ import "@fontsource/ibm-plex-mono/latin-500.css";
 import "skeleton-mammoth/dist/skeleton-mammoth.min.css";
 import "./datashow.css";
 import "./styles.css";
+import "./settings.css";
 import { datashowCssVariablesResolver, datashowTheme } from "./theme";
 import { App } from "./App";
 

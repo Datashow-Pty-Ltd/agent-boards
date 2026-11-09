@@ -79,6 +79,14 @@ The visible Kanban groups the governed stages into five action lanes:
 overview delivery summary consumes the same shared lane definition as the
 board, while the database keeps the finer-grained evidence gates.
 
+The first browser connection opens a short, dismissible overview of the
+project record, governed stages, agent loop, and evidence model. It can be
+replayed from Project settings. Settings are project-scoped: maintainers can
+group adjacent governed stages into named board buckets and edit their purpose,
+responsible actor, WIP limit, and deterministic exit criteria. Stage identity,
+order, and allowed transitions remain database-protected and are not editable
+presentation preferences.
+
 Projects can be archived and restored through the UI, REST RPCs, or MCP.
 Archived projects leave the active portfolio and selector but keep their board,
 project record, activity, and repository intelligence. Their work queue is
@@ -206,6 +214,7 @@ unresolved or out-of-tolerance P0/P1/P2 values keep promotion blocked.
 - `list_repository_maps`
 - `upsert_repository_map`
 - `get_board`
+- `update_board_stage_settings`
 - `create_backlog_item`
 - `move_work_item`
 - `update_work_item`
@@ -258,6 +267,12 @@ file bytes as base64 and stores the file before creating the evidence attachment
 The REST equivalents are `GET /api/project_quality_constraints` and
 `POST /api/rpc/set_project_quality_constraint`. A waiver is not a silent skip:
 it requires a reason and records the deciding actor in project activity.
+
+Board configuration is exposed through
+`POST /api/rpc/update_board_stage_settings`. The RPC accepts a stage ID, bucket
+title, purpose, responsible actor, optional WIP limit, exit-criteria array, and
+actor name. It records the change in project activity without exposing stage
+order or transition mutation.
 
 Design-only completion is exposed through
 `POST /api/rpc/design_card_completion_requirements` and

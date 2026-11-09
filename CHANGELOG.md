@@ -7,6 +7,9 @@ gate.
 ## Unreleased
 
 - Prepared the first open-source release candidate.
+- Added a focused first-run overview, replayable project workflow settings,
+  configurable board buckets and deterministic exit criteria, and Datashow
+  attribution in the application footer.
 - Added governed delivery stages, deterministic acceptance criteria, visual
   design governance, evidence uploads, repository intelligence, and autonomous
   agent work queues.

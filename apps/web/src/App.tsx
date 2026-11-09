@@ -3,10 +3,12 @@ import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, use
 import { Button, Menu } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
-import { IconArchive, IconArchiveOff, IconChevronDown, IconPlus } from "@tabler/icons-react";
+import { IconArchive, IconArchiveOff, IconChevronDown, IconPlus, IconSettings } from "@tabler/icons-react";
 import { api } from "./api";
+import { AppFooter } from "./components/AppFooter";
 import { Brand } from "./components/Brand";
 import { CreateProjectModal } from "./components/CreateProjectModal";
+import { FirstRunTour } from "./components/FirstRunTour";
 import { BacklogSkeleton, BoardSkeleton, ProjectOverviewSkeleton } from "./components/LoadingSkeletons";
 import { ProjectArchiveModal } from "./components/ProjectArchiveModal";
 import type { ProjectSummary } from "./types";
@@ -15,10 +17,12 @@ const BacklogPage = lazy(() => import("./pages/BacklogPage").then((module) => ({
 const BoardPage = lazy(() => import("./pages/BoardPage").then((module) => ({ default: module.BoardPage })));
 const PortfolioPage = lazy(() => import("./pages/PortfolioPage").then((module) => ({ default: module.PortfolioPage })));
 const ProjectOverviewPage = lazy(() => import("./pages/ProjectOverviewPage").then((module) => ({ default: module.ProjectOverviewPage })));
+const ProjectSettingsPage = lazy(() => import("./pages/ProjectSettingsPage").then((module) => ({ default: module.ProjectSettingsPage })));
 
 function RouteFallback({ pathname }: { pathname: string }) {
   if (pathname.endsWith("/board")) return <BoardSkeleton />;
   if (pathname.endsWith("/backlog")) return <BacklogSkeleton />;
+  if (pathname.endsWith("/settings")) return <div className="page-state" role="status">Loading project settings</div>;
   if (pathname.startsWith("/projects/")) return <ProjectOverviewSkeleton summary={null} />;
   return <div className="page-state" role="status">Loading projects</div>;
 }
@@ -71,6 +75,7 @@ function Shell() {
               <Menu.Divider />
               <Menu.Item component={Link} to="/?view=archived" leftSection={<IconArchive size={14} />}>Archived projects</Menu.Item>
               <Menu.Item leftSection={<IconPlus size={14} />} onClick={controls.open}>New project</Menu.Item>
+              {projectBase && <Menu.Item component={Link} to={`${projectBase}/settings`} leftSection={<IconSettings size={14} />}>Project settings</Menu.Item>}
               <Menu.Divider />
               {selected.status === "archived"
                 ? <Menu.Item leftSection={<IconArchiveOff size={14} />} onClick={() => setProjectAction("restore")}>Restore project</Menu.Item>
@@ -85,11 +90,14 @@ function Shell() {
           <NavLink to={`${projectBase}/board`}>Board</NavLink>
           <NavLink to={`${projectBase}/backlog`}>Backlog</NavLink>
         </nav>}
+        {projectBase && <NavLink to={`${projectBase}/settings`} className="settings-link" aria-label="Project settings" title="Project settings"><IconSettings size={16} /></NavLink>}
         {projectBase && isWorkRoute && <span className="control-divider" aria-hidden="true" />}
         {isWorkRoute ? <Button className="header-action" onClick={() => window.dispatchEvent(new Event("agent-boards:add-item"))} leftSection={<IconPlus size={15} />}>Add item</Button> : !projectId ? <Button className="header-action" onClick={controls.open} leftSection={<IconPlus size={15} />}>New project</Button> : null}
       </div>
     </header>
-    <main className="main-content"><Suspense fallback={<RouteFallback pathname={location.pathname} />}><Routes><Route path="/" element={<PortfolioPage projects={projects} loading={loading} />} /><Route path="/projects/:projectId" element={<ProjectOverviewPage />} /><Route path="/projects/:projectId/board" element={selected?.status === "archived" ? <Navigate to={`/projects/${projectId}`} replace /> : <BoardPage />} /><Route path="/projects/:projectId/backlog" element={selected?.status === "archived" ? <Navigate to={`/projects/${projectId}`} replace /> : <BacklogPage />} /><Route path="/projects/:projectId/telemetry" element={<Navigate to={projectBase ?? "/"} replace />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes></Suspense></main>
+    <main className="main-content"><Suspense fallback={<RouteFallback pathname={location.pathname} />}><Routes><Route path="/" element={<PortfolioPage projects={projects} loading={loading} />} /><Route path="/projects/:projectId" element={<ProjectOverviewPage />} /><Route path="/projects/:projectId/board" element={selected?.status === "archived" ? <Navigate to={`/projects/${projectId}`} replace /> : <BoardPage />} /><Route path="/projects/:projectId/backlog" element={selected?.status === "archived" ? <Navigate to={`/projects/${projectId}`} replace /> : <BacklogPage />} /><Route path="/projects/:projectId/settings" element={selected?.status === "archived" ? <Navigate to={`/projects/${projectId}`} replace /> : <ProjectSettingsPage />} /><Route path="/projects/:projectId/telemetry" element={<Navigate to={projectBase ?? "/"} replace />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes></Suspense></main>
+    <AppFooter />
+    <FirstRunTour />
     <CreateProjectModal opened={newProject} onClose={controls.close} onCreated={load} />
     <ProjectArchiveModal
       project={selected ?? null}

@@ -63,6 +63,8 @@ export interface Stage {
   slug: string;
   title: string;
   position: number;
+  bucket_key: string;
+  bucket_title: string;
   purpose: string;
   responsible_actor: string;
   wip_limit: number | null;

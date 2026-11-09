@@ -21,6 +21,7 @@ import {
   uploadDirectory,
 } from "./media.js";
 import { serverInstructions } from "./serverInstructions.js";
+import { registerBoardSettingsTool } from "./boardSettingsTool.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const app = express();
@@ -92,6 +93,8 @@ function buildServer() {
       }),
     );
   }
+
+  registerBoardSettingsTool(server);
 
   server.registerTool(
     "list_service_capabilities",

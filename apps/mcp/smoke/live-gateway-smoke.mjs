@@ -23,7 +23,7 @@ test("OpenResty exposes a usable Agent Boards MCP endpoint", async () => {
 
     const { tools } = await client.listTools();
     const toolNames = new Set(tools.map((tool) => tool.name));
-    for (const requiredTool of ["list_projects", "get_board", "claim_next_ready_work_item", "move_work_item"]) {
+    for (const requiredTool of ["list_projects", "get_board", "update_board_stage_settings", "claim_next_ready_work_item", "move_work_item"]) {
       assert.ok(toolNames.has(requiredTool), `missing required MCP tool: ${requiredTool}`);
     }
 

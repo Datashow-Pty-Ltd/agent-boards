@@ -15,18 +15,15 @@ export interface DeliveryPhase {
 }
 
 export function groupStagesIntoDeliveryPhases(stages: Stage[]): DeliveryPhase[] {
-  const assigned = new Set<string>();
-  const grouped: DeliveryPhase[] = KANBAN_PHASES.map((phase) => {
-    const phaseStages = phase.stageSlugs
-      .map((slug) => stages.find((stage) => stage.slug === slug))
-      .filter((stage): stage is Stage => stage !== undefined);
-    phaseStages.forEach((stage) => assigned.add(stage.id));
-    return { key: phase.key, title: phase.title, stages: phaseStages };
-  }).filter((phase) => phase.stages.length > 0);
-
-  const unassigned = stages.filter((stage) => !assigned.has(stage.id));
-  if (unassigned.length > 0) {
-    grouped.splice(Math.max(0, grouped.length - 1), 0, { key: "other", title: "Other", stages: unassigned });
-  }
+  const fallbackBySlug = new Map<string, (typeof KANBAN_PHASES)[number]>(KANBAN_PHASES.flatMap((phase) => phase.stageSlugs.map((slug) => [slug, phase] as const)));
+  const grouped: DeliveryPhase[] = [];
+  [...stages].sort((left, right) => left.position - right.position).forEach((stage) => {
+    const fallback = fallbackBySlug.get(stage.slug);
+    const key = stage.bucket_key || fallback?.key || "other";
+    const title = stage.bucket_title || fallback?.title || "Other";
+    const previous = grouped.at(-1);
+    if (previous?.key === key) previous.stages.push(stage);
+    else grouped.push({ key, title, stages: [stage] });
+  });
   return grouped;
 }
