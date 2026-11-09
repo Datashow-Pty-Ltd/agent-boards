@@ -141,6 +141,26 @@ test("registered Codex and Claude workers claim and move distinct stories concur
     assert.equal(stories[0].id, createdStories[0].id, "the image-capable Codex worker should receive image-generation work");
     assert.equal(stories[1].id, createdStories[1].id, "Claude should receive browser work without claiming image generation");
 
+    const openSessions = await api(`/agent_work_sessions?project_id=eq.${project.id}&ended_at=is.null&select=work_item_id,worker_id,worker_handle`);
+    assert.equal(openSessions.length, 3, "each active claim should create one clock session");
+    assert.equal(new Set(openSessions.map((session) => session.worker_id)).size, 3, "claim sessions should retain immutable worker identities");
+
+    const reportedUsage = resultJson(await clients[0].callTool({
+      name: "report_work_session_usage",
+      arguments: {
+        workItemId: stories[0].id,
+        workerId: identities[0].worker_id,
+        resumeToken: identities[0].resume_token,
+        inputTokens: 1200,
+        outputTokens: 300,
+        estimatedCostUsd: 0.01,
+        provider: "smoke-test",
+        model: "deterministic-fixture",
+      },
+    }));
+    assert.equal(reportedUsage[0].input_tokens, 1200);
+    assert.equal(reportedUsage[0].output_tokens, 300);
+
     await Promise.all(clients.slice(0, 3).map((client, index) => client.callTool({
       name: "move_work_item",
       arguments: {
@@ -253,6 +273,9 @@ test("registered Codex and Claude workers claim and move distinct stories concur
         resumeToken: identities[3].resume_token,
       },
     });
+    const [releasedSession] = await api(`/agent_work_sessions?work_item_id=eq.${screenRecordingStory.id}&select=ended_at,end_reason`);
+    assert.ok(releasedSession.ended_at, "releasing a claim should close its clock session");
+    assert.equal(releasedSession.end_reason, "released");
 
     const staleTimestamp = new Date(Date.now() - 20 * 60_000).toISOString();
     await api(`/work_items?id=eq.${stories[0].id}`, {
@@ -292,6 +315,18 @@ test("registered Codex and Claude workers claim and move distinct stories concur
     assert.equal(released.assignee, null, "released work should not retain a worker");
     assert.equal(released.owner, workerSpecs[1].handle, "releasing a claim should preserve durable ownership");
     assert.equal(released.assignee_worker_id, null, "released work should clear the immutable worker claim");
+
+    const takeoverSessions = await api(`/agent_work_sessions?work_item_id=eq.${stories[0].id}&order=started_at.asc&select=worker_id,ended_at,end_reason`);
+    assert.equal(takeoverSessions.length, 2, "human takeover should close the old session and open a new one");
+    assert.equal(takeoverSessions[0].end_reason, "takeover");
+    assert.equal(takeoverSessions[1].worker_id, identities[3].worker_id);
+    assert.equal(takeoverSessions[1].ended_at, null);
+
+    const [metrics] = await api(`/project_agent_metrics?project_id=eq.${project.id}`);
+    assert.ok(Number(metrics.claim_session_count) >= 5, "project metrics should aggregate claim sessions");
+    assert.ok(Number(metrics.claimed_duration_ms) >= 0);
+    assert.equal(Number(metrics.input_tokens) + Number(metrics.output_tokens), 1500);
+    assert.equal(metrics.usage_reported_sessions, 1);
   } finally {
     await Promise.allSettled(clients.map((client) => client.close()));
     await api(`/projects?id=eq.${project.id}`, { method: "DELETE" });

@@ -6,6 +6,10 @@ gate.
 
 ## [Unreleased]
 
+- Replaced optional run telemetry in project KPIs with database-owned claim
+  sessions. Agent time now follows claim/heartbeat lifecycle with idle-timeout
+  caps, while token and cost totals remain explicitly host-reported and show
+  as unavailable rather than zero when no authoritative usage was supplied.
 - Added first-class work-item owners, separate active workers, owner-aware
   atomic claims, concurrent MCP worker guidance, and a live three-client claim
   and movement test.

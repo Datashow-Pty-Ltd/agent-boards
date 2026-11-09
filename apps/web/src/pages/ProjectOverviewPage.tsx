@@ -1,7 +1,7 @@
 import { Button, Group, Modal, Stack, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconChevronDown } from "@tabler/icons-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router";
 import { api } from "../api";
 import { DeliveryPipelineChart } from "../components/DashboardCharts";
@@ -9,7 +9,7 @@ import { GutterRail } from "../components/GutterRail";
 import { ActivitySkeleton, InlineSkeleton, ProjectOverviewSkeleton, RecordSkeleton } from "../components/LoadingSkeletons";
 import { ProjectRecordCarousels } from "../components/ProjectRecordCarousel";
 import { groupStagesIntoDeliveryPhases } from "../deliveryPhases";
-import type { ActivityEvent, BoardData, ProjectArtifact, ProjectRepository, ProjectSummary, TelemetryEvent } from "../types";
+import type { ActivityEvent, AgentMetrics, BoardData, ProjectArtifact, ProjectRepository, ProjectSummary } from "../types";
 
 const SECTIONS = [
   ["project-identity", "The project"],
@@ -52,7 +52,7 @@ export function ProjectOverviewPage() {
   const { projectId = "" } = useParams();
   const [summary, setSummary] = useState<ProjectSummary | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[] | null>(null);
-  const [telemetry, setTelemetry] = useState<TelemetryEvent[] | null>(null);
+  const [agentMetrics, setAgentMetrics] = useState<AgentMetrics | null | undefined>(undefined);
   const [board, setBoard] = useState<BoardData | null>(null);
   const [artifacts, setArtifacts] = useState<ProjectArtifact[] | null>(null);
   const [repository, setRepository] = useState<ProjectRepository | null | undefined>(undefined);
@@ -69,7 +69,7 @@ export function ProjectOverviewPage() {
     setSummary(null);
     setBoard(null);
     setActivity(null);
-    setTelemetry(null);
+    setAgentMetrics(undefined);
     setArtifacts(null);
     setRepository(undefined);
     setLoadError(null);
@@ -87,7 +87,7 @@ export function ProjectOverviewPage() {
     }).catch((error) => { if (!disposed) setLoadError(error instanceof Error ? error.message : String(error)); });
 
     void api.activities(projectId).then((events) => { if (!disposed) setActivity(events); }).catch(() => { if (!disposed) setActivity([]); });
-    void api.telemetry(projectId).then((runs) => { if (!disposed) setTelemetry(runs); }).catch(() => { if (!disposed) setTelemetry([]); });
+    void api.agentMetrics(projectId).then((metrics) => { if (!disposed) setAgentMetrics(metrics); }).catch(() => { if (!disposed) setAgentMetrics(null); });
     void api.artifacts(projectId).then((records) => { if (!disposed) setArtifacts(records); }).catch(() => { if (!disposed) setArtifacts([]); });
     void api.projectRepository(projectId).then((projectRepository) => { if (!disposed) setRepository(projectRepository); }).catch(() => { if (!disposed) setRepository(null); });
 
@@ -129,13 +129,6 @@ export function ProjectOverviewPage() {
     }
   }
 
-  const runTotals = useMemo(() => (telemetry ?? []).reduce((acc, event) => ({
-    duration: acc.duration + Number(event.duration_ms),
-    tokens: acc.tokens + Number(event.input_tokens) + Number(event.output_tokens),
-    cost: acc.cost + Number(event.estimated_cost_usd),
-    failures: acc.failures + (event.status === "failed" ? 1 : 0),
-  }), { duration: 0, tokens: 0, cost: 0, failures: 0 }), [telemetry]);
-
   if (loadError) return <div className="page-state"><h2>Project unavailable</h2><p>{loadError}</p></div>;
   if (!summary || !board) return <ProjectOverviewSkeleton summary={summary} />;
 
@@ -162,6 +155,11 @@ export function ProjectOverviewPage() {
   const currentFeature = features.find((item) => item.id === runningStory?.parent_id) ?? features[0];
   const deliveryPhases = groupStagesIntoDeliveryPhases(board.stages);
   const archived = summary.status === "archived";
+  const claimSessions = Number(agentMetrics?.claim_session_count ?? 0);
+  const reportedTokens = Number(agentMetrics?.input_tokens ?? 0) + Number(agentMetrics?.output_tokens ?? 0);
+  const hasReportedTokens = Number(agentMetrics?.token_reported_sessions ?? 0) > 0;
+  const hasReportedCost = Number(agentMetrics?.cost_reported_sessions ?? 0) > 0;
+  const usageCoverage = `${Number(agentMetrics?.usage_reported_sessions ?? 0)}/${claimSessions} sessions`;
 
   return <>
     <div className="content-page project-command-page">
@@ -193,8 +191,16 @@ export function ProjectOverviewPage() {
             <div><span>Current feature</span><strong className="kpi-text">{currentFeature?.title ?? "Not assigned"}</strong><small>{features.length} feature{features.length === 1 ? "" : "s"}</small></div>
             <div><span>Agents working</span><strong>{summary.running_items}</strong><small>right now</small></div>
             <div className={humanItems.length ? "attention" : ""}><span>Needs a person</span><strong>{humanItems.length}</strong><small>action required</small></div>
-            <div><span>Agent spend</span>{telemetry ? <><strong>${runTotals.cost.toFixed(2)}</strong><small>{formatNumber(runTotals.tokens)} tokens</small></> : <InlineSkeleton className="kpi-inline-skeleton" />}</div>
-            <div><span>Agent time</span>{telemetry ? <><strong>{duration(runTotals.duration)}</strong><small>{telemetry.length} recorded runs</small></> : <InlineSkeleton className="kpi-inline-skeleton" />}</div>
+            <div><span>Agent spend</span>{agentMetrics === undefined
+              ? <InlineSkeleton className="kpi-inline-skeleton" />
+              : hasReportedCost || hasReportedTokens
+                ? <><strong>{hasReportedCost ? `$${Number(agentMetrics?.estimated_cost_usd ?? 0).toFixed(2)}` : "—"}</strong><small>{hasReportedTokens ? `${formatNumber(reportedTokens)} reported tokens · ${usageCoverage}` : `Cost reported · ${usageCoverage}`}</small></>
+                : <><strong>—</strong><small>Usage not reported</small></>}</div>
+            <div><span>Agent time</span>{agentMetrics === undefined
+              ? <InlineSkeleton className="kpi-inline-skeleton" />
+              : claimSessions > 0
+                ? <><strong>{duration(Number(agentMetrics?.claimed_duration_ms ?? 0))}</strong><small>{claimSessions} claimed {claimSessions === 1 ? "session" : "sessions"}</small></>
+                : <><strong>—</strong><small>No tracked sessions</small></>}</div>
           </div>
           <div className="project-brief-grid">
             <div><div className="section-label">Project brief</div><p>{summary.description}</p></div>
