@@ -21,6 +21,27 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   await page.getByRole("link", { name: "Board", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Kanban Delivery Board" })).toBeVisible();
 
+  await expect(page.locator(".kanban-phase")).toHaveCount(5);
+  await expect(page.locator(".stage-control")).toHaveCount(9);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+
+  const lane = page.locator(".phase-stages").last();
+  const laneMetrics = await lane.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight }));
+  expect(laneMetrics.scrollHeight).toBeGreaterThan(laneMetrics.clientHeight);
+  await lane.evaluate((element) => { element.scrollTop = 100; });
+  expect(await lane.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  const stateControl = page.locator(".stage-control").first();
+  await expect(stateControl).toHaveAttribute("aria-expanded", "true");
+  await stateControl.click();
+  await expect(stateControl).toHaveAttribute("aria-expanded", "false");
+  await stateControl.click();
+  const storyGroup = page.locator(".work-type-control").filter({ hasText: "Stories" }).first();
+  await storyGroup.click();
+  await expect(storyGroup).toHaveAttribute("aria-expanded", "false");
+  await storyGroup.click();
+
   const card = page.locator(".work-card").first();
   if (await card.count()) {
     await card.click();

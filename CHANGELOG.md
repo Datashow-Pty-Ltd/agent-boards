@@ -10,6 +10,8 @@ gate.
 - Added a focused first-run overview, replayable project workflow settings,
   configurable board buckets and deterministic exit criteria, and Datashow
   attribution in the application footer.
+- Kept the Kanban board fixed to the viewport, moved vertical scrolling into
+  individual lanes, and added collapsible state, feature, and story groups.
 - Added governed delivery stages, deterministic acceptance criteria, visual
   design governance, evidence uploads, repository intelligence, and autonomous
   agent work queues.

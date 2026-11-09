@@ -1,5 +1,6 @@
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { Accordion } from "@mantine/core";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { IconAlertTriangle, IconCheck, IconClock, IconGripVertical, IconListCheck, IconLock, IconPhoto } from "@tabler/icons-react";
 import { groupStagesIntoDeliveryPhases } from "../deliveryPhases";
@@ -57,20 +58,32 @@ function FeatureCard({ item, stories, onOpen }: { item: WorkItem; stories: WorkI
   </button>;
 }
 
-function StageSection({ stage, items, features, allItems, dependencies, assets, showHeader, onOpen }: { stage: Stage; items: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; showHeader: boolean; onOpen: (item: WorkItem) => void }) {
+function StageSection({ stage, items, features, allItems, dependencies, assets, onOpen }: { stage: Stage; items: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; onOpen: (item: WorkItem) => void }) {
   const drop = useDroppable({ id: stage.id, data: { type: "stage", stage } });
   const overLimit = stage.wip_limit !== null && items.length > stage.wip_limit;
+  const openGroups = [features.length > 0 ? "features" : "", items.length > 0 ? "stories" : ""].filter(Boolean);
   return (
-    <section ref={drop.setNodeRef} className={`kanban-stage ${drop.isOver ? "drop-target" : ""}`} aria-label={`${stage.title} stage`}>
-      {showHeader && <header className="stage-header"><div><span>{stage.title}</span><p>{stage.responsible_actor}</p></div><div className={overLimit ? "count over" : "count"}>{items.length}{stage.wip_limit ? ` / ${stage.wip_limit}` : ""}</div></header>}
-      {features.length > 0 && <div className="feature-band"><div className="band-label">Features · {features.length}</div>{features.map((feature) => <FeatureCard key={feature.id} item={feature} stories={allItems.filter((item) => item.kind === "story" && item.parent_id === feature.id)} onOpen={() => onOpen(feature)} />)}</div>}
-      {features.length > 0 && <div className="stories-label">Stories · {items.length}</div>}
-      <div className="lane-cards">{items.map((item) => {
-        const blockedBy = dependencies.filter((dependency) => dependency.work_item_id === item.id || (item.parent_id !== null && dependency.work_item_id === item.parent_id)).map((dependency) => allItems.find((entry) => entry.id === dependency.depends_on_work_item_id)).filter((entry): entry is WorkItem => entry !== undefined).filter((entry) => !entry.completed_at && entry.progress !== "completed");
-        const parentFeature = item.parent_id ? allItems.find((entry) => entry.id === item.parent_id && entry.kind === "feature") : undefined;
-        return <WorkCard key={item.id} item={item} tasks={allItems.filter((entry) => entry.kind === "task" && entry.parent_id === item.id)} blockedBy={blockedBy} assets={assets.filter((asset) => asset.work_item_id === item.id)} visualChange={item.visual_evidence_required || Boolean(parentFeature?.visual_evidence_required)} onOpen={() => onOpen(item)} />;
-      })}{items.length === 0 && <div className="lane-empty">Drop work here</div>}</div>
-    </section>
+    <Accordion.Item ref={drop.setNodeRef} value={stage.id} className={`kanban-stage ${drop.isOver ? "drop-target" : ""}`}>
+      <Accordion.Control className="stage-control" aria-label={`${stage.title} state, ${items.length + features.length} work items`}>
+        <div className="stage-summary"><div><span>{stage.title}</span><p>{stage.responsible_actor}</p></div><div className={overLimit ? "count over" : "count"}>{items.length + features.length}{stage.wip_limit ? ` / ${stage.wip_limit}` : ""}</div></div>
+      </Accordion.Control>
+      <Accordion.Panel className="stage-panel">
+        {openGroups.length > 0 ? <Accordion multiple defaultValue={openGroups} className="work-type-accordion">
+          {features.length > 0 && <Accordion.Item value="features">
+            <Accordion.Control className="work-type-control"><span>Features</span><i>{features.length}</i></Accordion.Control>
+            <Accordion.Panel><div className="feature-band">{features.map((feature) => <FeatureCard key={feature.id} item={feature} stories={allItems.filter((item) => item.kind === "story" && item.parent_id === feature.id)} onOpen={() => onOpen(feature)} />)}</div></Accordion.Panel>
+          </Accordion.Item>}
+          {items.length > 0 && <Accordion.Item value="stories">
+            <Accordion.Control className="work-type-control"><span>Stories</span><i>{items.length}</i></Accordion.Control>
+            <Accordion.Panel><div className="lane-cards">{items.map((item) => {
+              const blockedBy = dependencies.filter((dependency) => dependency.work_item_id === item.id || (item.parent_id !== null && dependency.work_item_id === item.parent_id)).map((dependency) => allItems.find((entry) => entry.id === dependency.depends_on_work_item_id)).filter((entry): entry is WorkItem => entry !== undefined).filter((entry) => !entry.completed_at && entry.progress !== "completed");
+              const parentFeature = item.parent_id ? allItems.find((entry) => entry.id === item.parent_id && entry.kind === "feature") : undefined;
+              return <WorkCard key={item.id} item={item} tasks={allItems.filter((entry) => entry.kind === "task" && entry.parent_id === item.id)} blockedBy={blockedBy} assets={assets.filter((asset) => asset.work_item_id === item.id)} visualChange={item.visual_evidence_required || Boolean(parentFeature?.visual_evidence_required)} onOpen={() => onOpen(item)} />;
+            })}</div></Accordion.Panel>
+          </Accordion.Item>}
+        </Accordion> : <div className="lane-empty">Drop work here</div>}
+      </Accordion.Panel>
+    </Accordion.Item>
   );
 }
 
@@ -83,7 +96,7 @@ function PhaseLane({ title, phaseStages, stories, features, allItems, dependenci
       <div><span>{title}</span>{phaseStages.length > 1 && <p>{stageSummary}</p>}</div>
       <div className="count">{itemCount + featureCount}</div>
     </header>
-    <div className="phase-stages">
+    <Accordion multiple defaultValue={phaseStages.map((stage) => stage.id)} className="phase-stages" aria-label={`${title} lane states`}>
       {phaseStages.map((stage) => <StageSection
         key={stage.id}
         stage={stage}
@@ -92,10 +105,9 @@ function PhaseLane({ title, phaseStages, stories, features, allItems, dependenci
         allItems={allItems}
         dependencies={dependencies}
         assets={assets}
-        showHeader={phaseStages.length > 1}
         onOpen={onOpen}
       />)}
-    </div>
+    </Accordion>
   </section>;
 }
 
