@@ -33,10 +33,16 @@ a unique lowercase handle, its `clientType`, and only the capabilities actually
 available in that session. It retains the returned worker
 ID and one-time resume token privately for the session, verifies retained
 credentials with `resume_worker`, and supplies them to every claim, movement,
-heartbeat, block, and release call. The token must never be copied into chat,
-source files, comments, evidence, or logs. Separate Claude and Codex identities
-can then run against one project concurrently without sharing or colliding on a
-display name.
+heartbeat, block, release, and usage-report call. The token must never be copied
+into chat, source files, comments, evidence, or logs. Separate Claude and Codex
+identities can then run against one project concurrently without sharing or
+colliding on a display name.
+
+Claimed work time is recorded automatically by Agent Boards. If Claude Code
+exposes authoritative cumulative input-token, output-token, or cost values for
+the current claim, report them with `report_work_session_usage` before the card
+reaches Done, is blocked, or is released. If the host does not expose those
+values, do not estimate them; Agent Boards will show the usage as unreported.
 
 Claude does not need native image generation to use Agent Boards. Omit
 `image_generation` unless the connected Claude session genuinely has an image

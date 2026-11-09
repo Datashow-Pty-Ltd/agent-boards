@@ -1354,7 +1354,7 @@ function buildServer() {
   server.registerTool(
     "record_telemetry",
     {
-      description: "Record an agent run's duration, token use, cost, and outcome against a project or card.",
+      description: "Import legacy/manual run telemetry. This does not drive project overview metrics; registered workers should use report_work_session_usage for exact host-reported usage.",
       inputSchema: {
         projectId: z.string().uuid(),
         workItemId: z.string().uuid().optional(),

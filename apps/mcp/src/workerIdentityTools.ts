@@ -150,6 +150,40 @@ export function registerWorkerIdentityTools(server: McpServer) {
   );
 
   server.registerTool(
+    "report_work_session_usage",
+    {
+      description: "Report authoritative cumulative token and/or cost usage exposed by the agent host for this worker's latest claim session. Never estimate or invent usage; omit this call when the host does not expose exact values. Claim clock time is recorded automatically.",
+      inputSchema: {
+        workItemId: z.string().uuid(),
+        ...credentials,
+        inputTokens: z.number().int().nonnegative().optional(),
+        outputTokens: z.number().int().nonnegative().optional(),
+        estimatedCostUsd: z.number().nonnegative().optional(),
+        provider: z.string().max(120).optional(),
+        model: z.string().max(120).optional(),
+      },
+    },
+    async ({ workItemId, workerId, resumeToken, inputTokens, outputTokens, estimatedCostUsd, provider, model }) => {
+      if (inputTokens === undefined && outputTokens === undefined && estimatedCostUsd === undefined) {
+        throw new Error("Report at least one exact token or cost value; do not estimate missing usage.");
+      }
+      return textResult(await rest("/rpc/report_work_session_usage", {
+        method: "POST",
+        body: JSON.stringify({
+          target_work_item_id: workItemId,
+          target_worker_id: workerId,
+          resume_token: resumeToken,
+          reported_input_tokens: inputTokens ?? null,
+          reported_output_tokens: outputTokens ?? null,
+          reported_cost_usd: estimatedCostUsd ?? null,
+          reported_provider: provider ?? null,
+          reported_model: model ?? null,
+        }),
+      }));
+    },
+  );
+
+  server.registerTool(
     "get_work_item_claim_status",
     {
       description: "Read the registered active worker, claim heartbeat, idle threshold, and human-takeover eligibility.",

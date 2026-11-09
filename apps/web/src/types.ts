@@ -256,6 +256,20 @@ export interface TelemetryEvent {
   estimated_cost_usd: number;
   created_at: string;
 }
+export interface AgentMetrics {
+  project_id: string;
+  tracking_started_at: string;
+  claim_session_count: number;
+  open_claim_session_count: number;
+  closed_claim_session_count: number;
+  claimed_duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  estimated_cost_usd: number;
+  usage_reported_sessions: number;
+  token_reported_sessions: number;
+  cost_reported_sessions: number;
+}
 export interface ProjectArtifact {
   id: string;
   project_id: string;

@@ -36,6 +36,8 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   await project.click();
 
   await expect(page.getByRole("navigation", { name: "Project views" })).toBeVisible();
+  await expect(page.getByText("Usage not reported", { exact: true })).toBeVisible();
+  await expect(page.getByText("No tracked sessions", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Project settings" }).click();
   await expect(page.getByRole("heading", { name: "Workflow configuration" })).toBeVisible();
   await page.getByRole("button", { name: "Save Backlog" }).click();

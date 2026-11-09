@@ -1,4 +1,4 @@
-import type { AcceptanceCriterionInput, ActivityEvent, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind, WorkerCapability } from "./types";
+import type { AcceptanceCriterionInput, ActivityEvent, AgentMetrics, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind, WorkerCapability } from "./types";
 
 const BASE = "/api";
 
@@ -138,6 +138,10 @@ export const api = {
     return { ...core, dependencies, assets };
   },
   activities: (projectId: string) => request<ActivityEvent[]>(`/activity_events?project_id=eq.${projectId}&order=created_at.desc&limit=40`),
+  agentMetrics: async (projectId: string) => {
+    const rows = await request<AgentMetrics[]>(`/project_agent_metrics?project_id=eq.${projectId}&limit=1`);
+    return rows[0] ?? null;
+  },
   telemetry: (projectId: string) => request<TelemetryEvent[]>(`/telemetry_events?project_id=eq.${projectId}&order=created_at.desc&limit=100`),
   artifacts: (projectId: string) => request<ProjectArtifact[]>(`/project_artifacts?project_id=eq.${projectId}&order=updated_at.desc`),
   saveProjectArtifact: (record: ProjectArtifact, content: string) => request<ProjectArtifact[]>("/rpc/upsert_project_artifact", {

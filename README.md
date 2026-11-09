@@ -87,7 +87,7 @@ repository mirrors in named volumes.
 
 | Service | Purpose |
 | --- | --- |
-| `agent-boards-db` | PostgreSQL 17, schema, RPCs, seed board, telemetry views |
+| `agent-boards-db` | PostgreSQL 17, schema, RPCs, seed board, and claim-session metrics |
 | `agent-boards-rest` | PostgREST over the `api` schema |
 | `agent-boards-repo-intelligence` | Read-only exact-revision repository indexing, search, syntax graph, quality definitions, and cited maps |
 | `agent-boards-mcp` | Stateless Streamable HTTP MCP tools backed by PostgREST |
@@ -171,6 +171,15 @@ the claim and its durable ownership to a registered active worker, or release
 the claim back to the ready queue while preserving its owner. Active claims cannot be taken
 over. Each recovery is audit logged as a human action, and a disconnected old
 worker is prevented from moving the card after transfer.
+
+Agent work time is database-owned claimed clock time, measured from claim,
+heartbeat, terminal, block, release, and human-takeover events. Idle claims are
+capped at the project's lease timeout, so a disconnected worker cannot accrue
+time indefinitely. Token and cost totals are different: MCP cannot observe
+model accounting by itself. When a host exposes authoritative cumulative
+usage, the worker reports it with `report_work_session_usage`; otherwise the
+overview says **Usage not reported** instead of showing a misleading zero.
+Agents must never estimate missing token or cost values.
 
 Stage progression is evidence-gated for stories. Analyse must produce analysis
 evidence, Plan must produce an implementation plan, Build must identify the
@@ -297,6 +306,8 @@ unresolved or out-of-tolerance P0/P1/P2 values keep promotion blocked.
 - `get_visual_critique_package`
 - `record_visual_critique`
 - `claim_work_item`
+- `heartbeat_work_item`
+- `report_work_session_usage`
 - `block_work_item`
 - `release_work_item`
 - `list_work_item_evidence`
@@ -327,7 +338,11 @@ file bytes as base64 and stores the file before creating the evidence attachment
 - `list_project_records`
 - `get_project_record`
 - `upsert_project_record`
-- `record_telemetry`
+- `record_telemetry` (legacy/manual import; not used by overview metrics)
+
+The REST equivalents for work measurement are
+`GET /api/project_agent_metrics`, `GET /api/agent_work_sessions`, and
+`POST /api/rpc/report_work_session_usage`.
 
 The REST equivalents are `GET /api/project_quality_constraints` and
 `POST /api/rpc/set_project_quality_constraint`. A waiver is not a silent skip:
@@ -415,6 +430,7 @@ tools above.
 - `POST /api/rpc/set_work_item_required_capabilities` — declare feature, story, or task capability requirements before governed execution begins
 - `POST /api/rpc/claim_next_work_package_as_worker` — atomically claim one distinct, compatible ready story with registered credentials
 - `POST /api/rpc/heartbeat_work_item_as_worker` — renew the registered worker's claim lease
+- `POST /api/rpc/report_work_session_usage` — report exact host-observed token or cost usage for the worker's latest claim session
 - `POST /api/rpc/get_work_item_claim_status` — inspect freshness and takeover eligibility
 - `POST /api/rpc/authorize_idle_claim_takeover` — human-authorized stale claim transfer
 - `POST /api/rpc/authorize_idle_claim_release` — human-authorized stale claim release

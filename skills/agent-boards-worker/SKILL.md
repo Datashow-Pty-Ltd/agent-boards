@@ -34,6 +34,7 @@ Repeat the following sequence within the user's requested scope:
    - `required_worker_capabilities` define native execution facilities that must remain available for the claim.
 4. Perform the actual work in the repository. Keep the board synchronized as durable evidence becomes true, not in anticipation of it.
    - Renew the claim with `heartbeat_work_item` at least every five minutes until the story is Done, blocked, or deliberately released.
+   - Agent Boards records claimed clock time automatically from the claim lease. If the current host exposes authoritative cumulative token or cost values, call `report_work_session_usage` before the story reaches Done, is blocked, or is released. Never infer or estimate missing usage; leave it unreported when the host does not expose it.
    - After each child task is actually implemented, call `complete_task` with a concise outcome summary.
    - Child tasks do not traverse the story stage sequence; never use `move_work_item` or a generic execution-state update to complete them.
 5. Before each stage transition, call `get_work_item_context` and satisfy every blocking promotion criterion. Record the requested evidence, then move exactly one legal stage.
