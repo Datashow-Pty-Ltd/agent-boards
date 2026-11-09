@@ -194,30 +194,6 @@ BEGIN
   RETURN NEW;
 END $$;
 
--- Give the sample board concrete child work and a completed prerequisite so
--- the hierarchy and dependency controls are visible immediately.
-DO $$
-DECLARE v_project_id uuid; v_board_id uuid; v_story_id uuid; v_story_stage uuid; v_prerequisite_id uuid; v_task_title text; v_position integer := 0;
-BEGIN
-  SELECT w.project_id, w.board_id, w.id, w.stage_id INTO v_project_id, v_board_id, v_story_id, v_story_stage FROM api.work_items w WHERE w.item_key = 'AB-3';
-  SELECT w.id INTO v_prerequisite_id FROM api.work_items w WHERE w.item_key = 'AB-2';
-  IF v_story_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM api.work_items WHERE parent_id = v_story_id AND kind = 'task') THEN
-    FOREACH v_task_title IN ARRAY ARRAY[
-      'Build responsive board lanes',
-      'Connect drag and drop to governed transitions',
-      'Verify narrow-screen board behavior'
-    ] LOOP
-      INSERT INTO api.work_items(project_id, board_id, parent_id, stage_id, item_key, kind, title, description, priority, position)
-      VALUES (v_project_id, v_board_id, v_story_id, v_story_stage, api.allocate_item_key(v_project_id), 'task', v_task_title, '', 'medium', v_position);
-      v_position := v_position + 1;
-    END LOOP;
-  END IF;
-  IF v_story_id IS NOT NULL AND v_prerequisite_id IS NOT NULL THEN
-    INSERT INTO api.work_item_dependencies(work_item_id, depends_on_work_item_id)
-    VALUES (v_story_id, v_prerequisite_id) ON CONFLICT DO NOTHING;
-  END IF;
-END $$;
-
 GRANT SELECT ON api.agent_ready_stories TO web_anon;
 GRANT EXECUTE ON FUNCTION api.set_work_item_dependencies(uuid, uuid[]) TO web_anon;
 GRANT EXECUTE ON FUNCTION api.claim_work_item(uuid, text) TO web_anon;

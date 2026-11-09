@@ -32,7 +32,9 @@ docker compose up --build -d --wait
 
 Open <http://127.0.0.1:4173>. The OpenResty gateway exposes the UI, REST API,
 MCP Streamable HTTP endpoint, repository intelligence, and managed evidence
-uploads on one local origin. Stop the stack with `docker compose down`.
+uploads on one local origin. A fresh installation includes the Agent Boards
+Demo project shown above; it is created only when the database contains no
+projects. Stop the stack with `docker compose down`.
 
 Useful documentation:
 

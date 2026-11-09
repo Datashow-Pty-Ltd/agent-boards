@@ -25,8 +25,9 @@ public Internet hosting.
 - [x] pinned GitHub Actions, multi-platform CI, CodeQL, dependency review,
       OpenSSF Scorecard, Dependabot, checksums, and provenance workflows
 - [x] shared page-title and section-title typography contracts
-- [x] allowlisted source archive excludes local screenshots, build output,
-      caches, editor state, and the obsolete vendored chart package
+- [x] allowlisted source archive includes only curated README media and excludes
+      transient captures, build output, caches, editor state, and obsolete
+      vendored packages
 - [x] Apache License 2.0 applied to the repository and workspace packages, with
       Datashow attribution included in the source distribution
 - [x] Trivy filesystem, configuration, and built-container image scanning
