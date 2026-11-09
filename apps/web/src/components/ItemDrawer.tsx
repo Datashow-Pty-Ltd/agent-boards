@@ -82,6 +82,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
   const [newComment, setNewComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [addingTask, setAddingTask] = useState(false);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [addingComment, setAddingComment] = useState(false);
   const [addingVisual, setAddingVisual] = useState(false);
 
@@ -226,6 +227,25 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     } catch (error) {
       notifications.show({ title: "Could not add task", message: error instanceof Error ? error.message : String(error), color: "alert" });
     } finally { setAddingTask(false); }
+  }
+
+  async function completeTask(task: WorkItem) {
+    setCompletingTaskId(task.id);
+    try {
+      await api.completeTask(task.id, `Completed ${task.item_key}: ${task.title}`);
+      await onChanged();
+      const context = await api.workItemContext(item!.id);
+      setWorkContext(context);
+      notifications.show({ title: "Task completed", message: task.title, color: "accent" });
+    } catch (error) {
+      notifications.show({
+        title: "Could not complete task",
+        message: error instanceof Error ? error.message : String(error),
+        color: "alert",
+      });
+    } finally {
+      setCompletingTaskId(null);
+    }
   }
 
   async function addComment() {
@@ -405,7 +425,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
 
     {item.kind === "story" && <section className="record-block">
       <div className="record-block-title">Tasks <span>{childTasks.filter((task) => task.progress === "completed").length} / {childTasks.length}</span></div>
-      <div className="record-task-list">{childTasks.map((task) => <div className={task.progress === "completed" ? "record-task-completed" : undefined} key={task.id}><span className={task.progress === "completed" ? "done" : ""}>{task.progress === "completed" ? "✓" : ""}</span><div><strong>{task.title}</strong><small>{task.item_key} · {task.execution_state?.replaceAll("_", " ") ?? task.progress.replaceAll("_", " ")}</small></div></div>)}</div>
+      <div className="record-task-list">{childTasks.map((task) => <div className={task.progress === "completed" ? "record-task-completed" : undefined} key={task.id}><span className={task.progress === "completed" ? "done" : ""}>{task.progress === "completed" ? "✓" : ""}</span><div><strong>{task.title}</strong><small>{task.item_key} · {task.execution_state?.replaceAll("_", " ") ?? task.progress.replaceAll("_", " ")}</small></div>{task.progress !== "completed" && <ActionIcon aria-label={`Complete task ${task.title}`} loading={completingTaskId === task.id} onClick={() => void completeTask(task)}><IconCheck size={16} /></ActionIcon>}</div>)}</div>
       <Group className="record-add-row" align="flex-end" gap="xs"><TextInput label="Add task" placeholder="Describe a concrete piece of work" value={newTaskTitle} onChange={(event) => setNewTaskTitle(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") void addTask(); }} /><Button loading={addingTask} disabled={!newTaskTitle.trim()} onClick={addTask}>Add</Button></Group>
     </section>}
 

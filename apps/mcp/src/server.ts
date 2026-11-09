@@ -609,6 +609,26 @@ function buildServer() {
   );
 
   server.registerTool(
+    "complete_task",
+    {
+      description: "Mark one implemented child task complete. This atomically synchronizes progress, execution state, and completion time so the parent story can satisfy its task gate.",
+      inputSchema: {
+        taskId: z.string().uuid(),
+        actor: z.string().max(120).default("AI agent"),
+        summary: z.string().max(500).optional(),
+      },
+    },
+    async ({ taskId, actor, summary }) => textResult(await rest("/rpc/complete_task", {
+      method: "POST",
+      body: JSON.stringify({
+        target_task_id: taskId,
+        actor_name: actor,
+        completion_summary: summary ?? null,
+      }),
+    })),
+  );
+
+  server.registerTool(
     "set_work_item_prerequisites",
     {
       description: "Replace a story or feature's prerequisite links. Cycles, cross-project links, and mixed-type links are rejected.",

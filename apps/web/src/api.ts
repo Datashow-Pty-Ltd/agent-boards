@@ -161,6 +161,17 @@ export const api = {
     });
     return items[0] ?? null;
   },
+  completeTask: async (id: string, summary?: string) => {
+    const items = await request<WorkItem[]>("/rpc/complete_task", {
+      method: "POST",
+      body: JSON.stringify({
+        target_task_id: id,
+        actor_name: "You",
+        completion_summary: summary ?? null,
+      }),
+    });
+    return items[0] ?? null;
+  },
   createItem: async (value: { projectId: string; title: string; description: string; kind: WorkKind; priority: Priority; assignee?: string; parentId?: string; acceptanceCriteria?: AcceptanceCriterionInput[]; invariants?: string[]; visualEvidenceRequired?: boolean; designCardType?: DesignCardType; screenNames?: string[] }) => {
     const created = await request<WorkItem[]>("/rpc/create_backlog_item", {
       method: "POST",

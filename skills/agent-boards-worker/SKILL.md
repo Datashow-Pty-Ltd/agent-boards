@@ -28,9 +28,11 @@ Repeat the following sequence within the user's requested scope:
    - attached visual references and mockups define the intended presentation;
    - promotion acceptance criteria define what is required to enter the next stage.
 4. Perform the actual work in the repository. Keep the board synchronized as durable evidence becomes true, not in anticipation of it.
+   - After each child task is actually implemented, call `complete_task` with a concise outcome summary.
+   - Child tasks do not traverse the story stage sequence; never use `move_work_item` or a generic execution-state update to complete them.
 5. Before each stage transition, call `get_work_item_context` and satisfy every blocking promotion criterion. Record the requested evidence, then move exactly one legal stage.
 6. If `design_card_type` is set, treat the story as design-only. Complete its child tasks, obtain every required human design approval, call `get_design_card_completion_requirements`, and then call `complete_design_card` from Plan. Do not move it into Build and do not claim mockups are implemented application evidence.
-7. Complete a software story's child tasks before promoting the story to Done.
+7. Complete a software story's child tasks with `complete_task` before promoting the story from Review to Merge.
 8. After Done, immediately claim the next eligible story and continue.
 
 ## Governed stage order
