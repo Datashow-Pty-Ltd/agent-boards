@@ -25,11 +25,11 @@ test("opens a project board and supports keyboard drawer dismissal", async ({ pa
   await expect(page.locator(".stage-control")).toHaveCount(9);
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
 
-  const lane = page.locator(".phase-stages").last();
-  const laneMetrics = await lane.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight }));
-  expect(laneMetrics.scrollHeight).toBeGreaterThan(laneMetrics.clientHeight);
-  await lane.evaluate((element) => { element.scrollTop = 100; });
-  expect(await lane.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const laneOverflow = await page.locator(".phase-stages").evaluateAll((lanes) =>
+    lanes.map((lane) => getComputedStyle(lane).overflowY),
+  );
+  expect(laneOverflow).toEqual(["auto", "auto", "auto", "auto", "auto"]);
+  expect(await page.locator(".kanban-scroll").evaluate((element) => getComputedStyle(element).overflowY)).toBe("hidden");
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
   const stateControl = page.locator(".stage-control").first();
