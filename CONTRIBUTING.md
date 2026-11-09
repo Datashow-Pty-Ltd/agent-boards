@@ -8,7 +8,8 @@ Thank you for helping improve Agent Boards.
 3. Keep durable invariants in PostgreSQL and keep agents/UI as clients of those
    invariants.
 4. Add a new migration; never rewrite a released one.
-5. Run `pnpm release:check` before opening a pull request.
+5. Run `pnpm release:check`, `aqua install`, and `pnpm security:oss` before
+   opening a pull request.
 6. Include live MCP verification for gateway or protocol changes and visual
    evidence for material UI changes.
 

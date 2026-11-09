@@ -29,6 +29,13 @@ public Internet hosting.
       caches, editor state, and the obsolete vendored chart package
 - [x] Apache License 2.0 applied to the repository and workspace packages, with
       Datashow attribution included in the source distribution
+- [x] Trivy filesystem, configuration, and built-container image scanning
+- [x] Gitleaks full-history secret scanning
+- [x] OSV-Scanner production dependency scanning
+- [x] Semgrep Community Edition static analysis
+- [x] ShellCheck and Hadolint linting for shell and container recipes
+- [x] actionlint and zizmor analysis for GitHub Actions workflows
+- [x] explicit Apache-2.0 production dependency licence compatibility gate
 
 ## Required before publishing the repository
 

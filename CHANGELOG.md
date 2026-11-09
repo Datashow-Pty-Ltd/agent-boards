@@ -21,3 +21,5 @@ gate.
 - Added linting, browser smoke tests, cross-platform CI, dependency review,
   CodeQL, OpenSSF Scorecard, SBOM generation, release checksums, and build
   provenance attestations.
+- Added pinned Trivy, Gitleaks, OSV-Scanner, Semgrep CE, ShellCheck, Hadolint,
+  actionlint, zizmor, and Apache-2.0 dependency-licence gates.

@@ -1,0 +1,8 @@
+ignored:
+  # Alpine package repositories retain only a moving version. Pinning packages
+  # independently of the base image makes routine base-image security updates
+  # fail once that exact package revision leaves the repository.
+  - DL3018
+  # The official Node images define the named `node` user consistently. Keeping
+  # the name makes the runtime intent clearer than duplicating its numeric ID.
+  - DL3066

@@ -4,6 +4,12 @@
   "license": "Apache-2.0",
   "private": true,
   "packageManager": "pnpm@10.26.1",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.28.2",
+      "minimatch": "11.0.1"
+    }
+  },
   "scripts": {
     "build": "pnpm --filter @agent-boards/web build && pnpm --filter @agent-boards/mcp build && pnpm --filter @agent-boards/repo-intelligence build",
     "lint": "eslint . --max-warnings 0",
@@ -30,11 +36,14 @@
     "audit:prod": "pnpm audit --prod --audit-level high",
     "security:secrets": "node scripts/scan-secrets.mjs",
     "security:sbom": "node scripts/generate-sbom.mjs",
+    "security:licenses": "node scripts/check-licenses.mjs",
+    "security:oss": "./scripts/security-oss.sh",
+    "security:containers": "./scripts/scan-container-images.sh",
     "release:check": "pnpm lint && pnpm check:limits && pnpm typecheck && pnpm test && pnpm build && pnpm audit:prod && pnpm security:secrets",
     "release:verify": "node scripts/verify-release.mjs",
     "release:verify:public": "node scripts/verify-release.mjs --public",
     "release:archive": "./scripts/create-source-archive.sh",
-    "certify": "pnpm release:check && pnpm security:sbom && pnpm release:archive && pnpm release:verify"
+    "certify": "pnpm release:check && pnpm security:licenses && pnpm security:sbom && pnpm release:archive && pnpm release:verify"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

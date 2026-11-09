@@ -13,13 +13,15 @@ public or creating a version tag.
 - [ ] Docker Compose builds and reaches healthy state.
 - [x] Apple Container builds and reaches healthy state.
 - [x] Production dependency audit reports no high-or-critical findings.
+- [x] Trivy, Gitleaks, OSV-Scanner, Semgrep CE, ShellCheck, Hadolint,
+      actionlint, zizmor, and licence-compatibility gates are enforced.
 - [x] CycloneDX SBOM and source archive are generated.
 - [x] Release archive contains no local evidence, builds, credentials, caches,
       editor state, or vendored private packages.
 
 ## Repository and governance
 
-- [ ] Open-source licence selected and committed.
+- [x] Apache License 2.0 and Datashow `NOTICE` selected and committed.
 - [ ] Public name, description, maintainer contact, and security-reporting path
       confirmed.
 - [ ] Secret scanning, push protection, vulnerability alerts, and private

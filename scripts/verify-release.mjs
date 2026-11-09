@@ -13,7 +13,10 @@ const required = [
   "docs/security-assurance.md", "docs/certification/release-checklist.md",
   "docs/certification/security-scan-proof.md", "docs/open-source-readiness.md",
   ".github/workflows/ci.yml", ".github/workflows/release.yml", ".github/workflows/codeql.yml",
-  ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml", ".github/dependabot.yml",
+  ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
+  ".github/workflows/security.yml", ".github/dependabot.yml", "aqua.yaml",
+  ".hadolint.yaml", ".trivyignore.yaml",
+  "scripts/check-licenses.mjs", "scripts/security-oss.sh", "scripts/scan-container-images.sh",
   "compose.yaml", "docker/gateway.Containerfile", "docker/mcp.Containerfile",
   "docker/postgres.Containerfile", "docker/repo-intelligence.Containerfile", "docker/web.Containerfile",
 ];

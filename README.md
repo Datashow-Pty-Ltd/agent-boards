@@ -348,6 +348,8 @@ tools above.
 
 ```bash
 pnpm release:check
+pnpm security:licenses
+pnpm security:oss    # after `aqua install`
 pnpm test:live       # with the stack running
 pnpm test:claude     # with authenticated Claude Code
 ```

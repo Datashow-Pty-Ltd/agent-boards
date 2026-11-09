@@ -10,6 +10,7 @@ RUN pnpm --filter @agent-boards/web build
 FROM node:24-alpine
 WORKDIR /app
 ENV PORT=5173
+RUN corepack disable && rm -rf /usr/local/lib/node_modules/npm
 COPY LICENSE NOTICE /usr/local/share/licenses/agent-boards/
 COPY --from=build --chown=node:node /workspace/apps/web/dist ./dist
 COPY --chown=node:node docker/web-server.mjs ./server.mjs

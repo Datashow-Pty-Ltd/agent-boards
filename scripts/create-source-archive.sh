@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 VERSION=$(node -p "require('$ROOT_DIR/package.json').version")
 OUTPUT=${1:-"$ROOT_DIR/release/agent-boards-$VERSION-source.tgz"}
 
@@ -21,8 +21,8 @@ tar -czf "$OUTPUT" \
   --exclude='.env' \
   --exclude='*.log' \
   LICENSE NOTICE README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md AGENTS.md CLAUDE.md \
-  .dockerignore .env.example .gitignore .github \
-  package.json pnpm-lock.yaml pnpm-workspace.yaml eslint.config.mjs playwright.config.ts compose.yaml \
+  .dockerignore .env.example .gitignore .hadolint.yaml .trivyignore.yaml .github \
+  package.json pnpm-lock.yaml pnpm-workspace.yaml aqua.yaml eslint.config.mjs playwright.config.ts compose.yaml \
   apps database docker docs scripts skills tests
 
 echo "$OUTPUT"

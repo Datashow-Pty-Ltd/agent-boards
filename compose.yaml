@@ -38,7 +38,7 @@ services:
     labels: *agent-boards-labels
 
   postgrest:
-    image: postgrest/postgrest:v12.2.12
+    image: postgrest/postgrest:v16.5
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -111,7 +111,7 @@ services:
       MCP_HOST: mcp
       INTELLIGENCE_HOST: intelligence
     ports:
-      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4173}:80"
+      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4173}:8080"
     labels: *agent-boards-labels
 
 volumes:

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 ACTION=${1:-up}
 NETWORK=agent-boards-net
 VOLUME=agent-boards-postgres
@@ -72,7 +72,7 @@ case "$ACTION" in
     container run -d --name "$REST" --label "$STACK_LABEL" --network "$NETWORK,alias=postgrest" \
       --env PGRST_DB_URI=postgres://authenticator:postgrest@db:5432/agentboards \
       --env PGRST_DB_SCHEMAS=api --env PGRST_DB_ANON_ROLE=web_anon --env PGRST_SERVER_PORT=3000 \
-      postgrest/postgrest:v12.2.12 >/dev/null
+      postgrest/postgrest:v16.5 >/dev/null
     container run -d --name "$INTELLIGENCE" --label "$STACK_LABEL" --network "$NETWORK,alias=intelligence" \
       --volume "$REPOSITORY_VOLUME:/data/repositories" \
       --env POSTGREST_URL=http://postgrest:3000 --env PORT=8081 --env GITHUB_TOKEN \
@@ -87,7 +87,7 @@ case "$ACTION" in
     container run -d --name "$WEB" --label "$STACK_LABEL" --network "$NETWORK,alias=web" \
       agent-boards-web:dev >/dev/null
     container run -d --name "$GATEWAY" --label "$STACK_LABEL" --network "$NETWORK" \
-      --publish "${HOST_PORT}:80" \
+      --publish "${HOST_PORT}:8080" \
       --env WEB_HOST=web.rivyr --env REST_HOST=postgrest.rivyr \
       --env MCP_HOST=mcp.rivyr --env INTELLIGENCE_HOST=intelligence.rivyr \
       agent-boards-gateway:dev >/dev/null

@@ -6,10 +6,16 @@ on:
   push:
     tags: ['v*']
 
-permissions: read-all
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   release:
+    name: Certify and publish release candidate
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -18,18 +24,28 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 10.26.1
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
-          cache: pnpm
+          package-manager-cache: false
+      - name: Install pinned open-source security tools
+        uses: aquaproj/aqua-installer@611554c6f0137ba41c8dd15aca8bee82504ea461 # v4.1.1
+        with:
+          aqua_version: v2.66.1
+      - run: aqua install
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm certify
+      - run: pnpm security:oss
       - run: pnpm release:verify:public
       - run: docker compose up --build -d --wait
+      - run: pnpm security:containers
       - run: pnpm test:live
       - run: pnpm test:browser
       - if: always()
@@ -39,7 +55,7 @@ jobs:
       - name: Create release checksums
         run: |
           cd release
-          sha256sum *.tgz *.json > SHA256SUMS
+          sha256sum ./*.tgz ./*.json > SHA256SUMS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: agent-boards-release-candidate

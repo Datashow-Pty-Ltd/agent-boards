@@ -14,7 +14,9 @@ RUN pnpm build && pnpm prune --prod
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=8081 REPOSITORY_ROOT=/data/repositories
-RUN apk add --no-cache ca-certificates git ripgrep su-exec
+RUN apk add --no-cache ca-certificates git ripgrep su-exec \
+  && corepack disable \
+  && rm -rf /usr/local/lib/node_modules/npm
 COPY LICENSE NOTICE /usr/local/share/licenses/agent-boards/
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules

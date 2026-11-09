@@ -20,6 +20,10 @@ published that assessment.
 - Weekly Dependabot checks for npm and pinned GitHub Actions dependencies.
 - CycloneDX production-dependency SBOM generation.
 - Full commit-SHA pinning for third-party GitHub Actions.
+- Pinned Trivy, Gitleaks, OSV-Scanner, Semgrep Community Edition, ShellCheck,
+  Hadolint, actionlint, and zizmor checks through the Aqua tool manifest.
+- Conservative production-dependency licence allowlisting for Apache-2.0
+  compatibility; every new licence requires explicit review.
 - SHA-256 release checksums and GitHub build-provenance attestations.
 
 Run the local code and release-candidate controls with:
@@ -27,7 +31,13 @@ Run the local code and release-candidate controls with:
 ```bash
 pnpm install --frozen-lockfile
 pnpm certify
+aqua install
+pnpm security:oss
 ```
+
+The tagged-release workflow also builds every Compose image and runs
+`pnpm security:containers`. Local maintainers can run the same image gate after
+starting Docker with `docker compose build && pnpm security:containers`.
 
 With the container stack running, also run:
 
