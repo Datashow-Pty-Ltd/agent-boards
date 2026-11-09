@@ -29,13 +29,26 @@ skill. Claude and Codex receive the same focused work package and are subject
 to the same database gates.
 
 Before claiming work, each Claude or Codex session calls `register_worker` with
-a unique lowercase handle and its `clientType`. It retains the returned worker
+a unique lowercase handle, its `clientType`, and only the capabilities actually
+available in that session. It retains the returned worker
 ID and one-time resume token privately for the session, verifies retained
 credentials with `resume_worker`, and supplies them to every claim, movement,
 heartbeat, block, and release call. The token must never be copied into chat,
 source files, comments, evidence, or logs. Separate Claude and Codex identities
 can then run against one project concurrently without sharing or colliding on a
 display name.
+
+Claude does not need native image generation to use Agent Boards. Omit
+`image_generation` unless the connected Claude session genuinely has an image
+service available. It can still advertise capabilities such as
+`browser_automation`, `screenshot_capture`, `screen_recording`, or
+`visual_comparison`. PostgreSQL assigns only stories whose declared feature,
+story, and task requirements are covered by that worker. If the only ready
+stories require unavailable capabilities, Claude receives
+`no_compatible_work`; another suitably equipped worker can claim them. A
+worker may call `update_worker_capabilities` if its actual tool availability
+changes during the session, but must never inflate its declaration merely to
+receive a card.
 
 The repository also includes `skills/agent-boards-worker/SKILL.md` for hosts
 that support explicit local skills. It mirrors the service contract but is not

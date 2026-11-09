@@ -1,4 +1,4 @@
-import type { AcceptanceCriterionInput, ActivityEvent, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind } from "./types";
+import type { AcceptanceCriterionInput, ActivityEvent, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind, WorkerCapability } from "./types";
 
 const BASE = "/api";
 
@@ -172,7 +172,7 @@ export const api = {
     });
     return items[0] ?? null;
   },
-  createItem: async (value: { projectId: string; title: string; description: string; kind: WorkKind; priority: Priority; owner?: string; parentId?: string; acceptanceCriteria?: AcceptanceCriterionInput[]; invariants?: string[]; visualEvidenceRequired?: boolean; designCardType?: DesignCardType; screenNames?: string[] }) => {
+  createItem: async (value: { projectId: string; title: string; description: string; kind: WorkKind; priority: Priority; owner?: string; parentId?: string; acceptanceCriteria?: AcceptanceCriterionInput[]; invariants?: string[]; requiredWorkerCapabilities?: WorkerCapability[]; visualEvidenceRequired?: boolean; designCardType?: DesignCardType; screenNames?: string[] }) => {
     let created = await request<WorkItem[]>("/rpc/create_backlog_item", {
       method: "POST",
       body: JSON.stringify({
@@ -193,6 +193,12 @@ export const api = {
         actor_name: "You",
       }),
     });
+    if (created[0] && value.requiredWorkerCapabilities?.length) {
+      created = await request<WorkItem[]>("/rpc/set_work_item_required_capabilities", {
+        method: "POST",
+        body: JSON.stringify({ target_work_item_id: created[0].id, requested_capabilities: value.requiredWorkerCapabilities, actor_name: "You" }),
+      });
+    }
     if (created[0] && value.owner?.trim()) created = await api.setWorkItemOwner(created[0].id, value.owner);
     if (value.kind === "story" && created[0] && (value.designCardType || value.screenNames?.length)) {
       return request<WorkItem[]>("/rpc/set_design_card", {

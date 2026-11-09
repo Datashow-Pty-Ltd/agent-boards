@@ -42,7 +42,8 @@ The basic autonomous loop is sound:
 Agent Boards makes that loop explicit through
 `claim_next_ready_work_item`. Before entering the loop, a Codex, Claude, or
 other MCP client registers a project-scoped persistent handle and retains its
-immutable worker ID and private resume token. Those credentials accompany each
+immutable worker ID and private resume token. Registration also records only
+the capabilities actually available to that session. Those credentials accompany each
 claim-sensitive operation, so a display-name collision cannot let one agent
 operate another agent's claim. The claim operation is atomic: it selects and claims
 the oldest, highest-priority eligible story. It returns a focused work package,
@@ -56,7 +57,11 @@ ready story. When no work is eligible, the service returns `no_ready_work` and
 the loop ends.
 
 Several registered workers can run this loop simultaneously. PostgreSQL gives
-each one distinct ready work, while Agent Boards records the public handle,
+each one distinct, compatible ready work. A story inherits explicit capability
+requirements from its feature and tasks; an incompatible worker does not see
+it as claimable and receives `no_compatible_work` when that is all that remains.
+Agent Boards does not assume every Codex can generate images or that no Claude
+can: workers advertise the tools available in their actual session. Agent Boards records the public handle,
 client type, last-seen time, claim ownership, and audit history. Resume tokens
 are never returned by worker listings or written into board records.
 

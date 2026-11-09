@@ -1,5 +1,6 @@
 export type Priority = "urgent" | "high" | "medium" | "low";
 export type WorkKind = "feature" | "story" | "task";
+export type WorkerCapability = "code_execution" | "git" | "browser_automation" | "screenshot_capture" | "screen_recording" | "image_generation" | "visual_comparison";
 export type DesignCardType = "visual_concept" | "screen_mockup" | null;
 export type ExecutionState = "queued" | "running" | "waiting_for_human" | "blocked" | "failed" | "complete" | "cancelled" | null;
 export type AcceptanceVerificationMethod = "automated_test" | "command" | "http_assertion" | "database_assertion" | "visual_baseline";
@@ -92,6 +93,7 @@ export interface WorkItem {
   owner: string | null;
   assignee: string | null;
   assignee_worker_id: string | null;
+  required_worker_capabilities: WorkerCapability[];
   claim_started_at: string | null;
   claim_heartbeat_at: string | null;
   due_date: string | null;
@@ -125,6 +127,7 @@ export interface AgentWorker {
   handle: string;
   display_name: string;
   client_type: "codex" | "claude" | "other";
+  capabilities: WorkerCapability[];
   status: "active" | "revoked";
   last_seen_at: string;
   created_at: string;

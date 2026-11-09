@@ -133,15 +133,23 @@ tool again. If the story cannot progress, it records the reason with
 when `claim_next_ready_work_item` returns `no_ready_work`.
 
 Several Codex, Claude, or other MCP clients can work the same project at once.
-Each client first calls `register_worker` with a stable unique handle and its
-client type. Agent Boards returns an immutable worker ID and a private resume
-token exactly once. The client verifies retained credentials with
+Each client first calls `register_worker` with a stable unique handle, its
+client type, and only the capabilities actually available in that session.
+Agent Boards returns an immutable worker ID and a private resume token exactly
+once. The client verifies retained credentials with
 `resume_worker`, then sends the ID and token with every claim-sensitive
 operation. Handles are unique per project, credentials cannot be borrowed by a
 different agent, and tokens are never exposed by the worker-list API. Let each
 registered worker run the same claim loop.
 Claims use row locking with `SKIP LOCKED`, so concurrent workers receive
-different ready stories instead of racing for the same card. `owner` is the
+different compatible stories instead of racing for the same card. Required
+capabilities can be declared on features, stories, or tasks and are inherited
+into the story's focused package. A worker that lacks a requirement never
+receives that story. If ready work exists but none matches, the queue returns
+`no_compatible_work` with the unmet work instead of assigning it unsafely.
+Capabilities are explicit—not inferred from `codex` or `claude`—so a Claude
+session can perform browser, HTML, screenshot, or other visual work without
+claiming native image generation. `owner` is the
 durable person or agent accountable for an item; `assignee` is the transient
 registered worker holding its current claim and is cleared when that claim is
 released or blocked. The immutable `assignee_worker_id` prevents two clients
@@ -273,8 +281,10 @@ unresolved or out-of-tolerance P0/P1/P2 values keep promotion blocked.
 - `list_project_quality_constraints`
 - `set_project_quality_constraint`
 - `register_worker`
+- `update_worker_capabilities`
 - `resume_worker`
 - `list_project_workers`
+- `set_work_item_required_capabilities`
 - `claim_next_ready_work_item`
 - `get_work_item_context`
 - `get_design_card_completion_requirements`
@@ -395,9 +405,11 @@ tools above.
 - `POST /api/rpc/set_work_item_owner` — assign or clear durable ownership
 - `GET /api/project_owner_summary?project_id=eq.<project-id>` — owner workload counts
 - `POST /api/rpc/register_agent_worker` — register one project-scoped persistent worker
+- `POST /api/rpc/update_agent_worker_capabilities` — change the authenticated worker's currently available capabilities
 - `POST /api/rpc/resume_agent_worker` — verify retained worker credentials
 - `GET /api/project_agent_workers?project_id=eq.<project-id>` — list public worker identities and claim counts
-- `POST /api/rpc/claim_next_work_package_as_worker` — atomically claim one distinct ready story with registered credentials
+- `POST /api/rpc/set_work_item_required_capabilities` — declare feature, story, or task capability requirements before governed execution begins
+- `POST /api/rpc/claim_next_work_package_as_worker` — atomically claim one distinct, compatible ready story with registered credentials
 - `POST /api/rpc/heartbeat_work_item_as_worker` — renew the registered worker's claim lease
 - `POST /api/rpc/get_work_item_claim_status` — inspect freshness and takeover eligibility
 - `POST /api/rpc/authorize_idle_claim_takeover` — human-authorized stale claim transfer
