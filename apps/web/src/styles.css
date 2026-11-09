@@ -549,9 +549,27 @@ a { color: inherit; text-decoration: none; }
 .record-task-list strong { display: block; font-size: 15px; font-weight: 400; }.record-task-list small { color: var(--c-ink-3); font-family: var(--f-mono); font-size: 9.5px; text-transform: uppercase; }
 .record-task-list > .record-task-completed > div { opacity: .55; }
 .record-task-list > .record-task-completed strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+.record-story-list { display: grid; }
+.record-story-list > button { width: 100%; display: grid; grid-template-columns: 21px minmax(0, 1fr) 18px; gap: 11px; align-items: center; padding: 13px 0; border: 0; border-bottom: 1px solid var(--c-hair-3); background: transparent; color: var(--c-ink-2); text-align: left; cursor: pointer; }
+.record-story-list > button:hover { color: var(--c-ink); }
+.record-story-list > button:disabled { cursor: default; }
+.record-story-list > button > span { width: 12px; height: 12px; display: grid; place-items: center; border: 1px solid var(--c-hair); color: white; font-size: 8px; }
+.record-story-list > button > span.done { width: 15px; height: 15px; border-color: var(--c-accent); background: var(--c-accent); }
+.record-story-list strong { display: block; overflow: hidden; font-size: 15px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.record-story-list small { display: block; margin-top: 2px; color: var(--c-ink-3); font-family: var(--f-mono); font-size: 9.5px; text-transform: uppercase; }
+.record-story-list > .record-story-completed > div { opacity: .55; }
+.record-story-list > .record-story-completed strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+.record-register-groups { display: grid; gap: 24px; }
+.record-register-group h3 { display: flex; justify-content: space-between; margin: 0 0 7px; color: var(--c-ink-2); font-size: 15px; font-weight: 500; }
+.record-register-group h3 span { color: var(--c-ink-4); font-family: var(--f-mono); font-size: 10px; font-weight: 400; }
+.record-register-group article { padding: 12px 0; border-bottom: 1px solid var(--c-hair-3); }
+.record-register-group article strong { display: block; color: var(--c-ink-2); font-size: 15px; font-weight: 400; }
+.record-register-group article p { margin: 4px 0 0; color: var(--c-ink-3); font-size: 13px; line-height: 1.45; }
+.record-register-group article small { display: block; margin-top: 7px; color: var(--c-ink-4); font-family: var(--f-mono); font-size: 9.5px; text-transform: uppercase; }
+.record-register-empty { margin: 0; padding: 9px 0 12px; border-bottom: 1px solid var(--c-hair-3); color: var(--c-ink-4); font-size: 14px; }
 .record-add-row { margin-top: 18px; }.record-add-row > :first-child { flex: 1; }
 .record-empty-action { color: var(--c-ink-4); font-family: var(--f-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; }
-.record-criteria p { margin: 0; color: var(--c-ink-2); font-size: 17px; line-height: 1.45; }.record-criteria p.record-muted { color: var(--c-ink-4); }
+.record-criteria p { margin: 0; color: var(--c-ink-2); font-size: 17px; line-height: 1.45; }.record-criteria p.record-muted { color: var(--c-ink-4); font-family: var(--f-sans); font-size: 14px; }
 .record-criteria p strong { display: block; font: inherit; color: inherit; }
 .record-criteria p small { display: block; margin-top: 5px; color: var(--c-ink-4); font-family: var(--f-mono); font-size: 11px; line-height: 1.55; text-transform: uppercase; letter-spacing: .06em; }
 .record-fact-grid { display: grid; grid-template-columns: 145px 1fr; gap: 16px 0; }
@@ -563,9 +581,9 @@ a { color: inherit; text-decoration: none; }
 .record-dependencies .mantine-MultiSelect-input { border-color: var(--c-hair); }
 .record-readiness { display: flex; gap: 9px; align-items: center; margin-top: 18px; color: var(--c-accent); font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
 .record-readiness.blocked { color: var(--c-alert); }
-.record-muted { margin: 0; color: var(--c-ink-4); font-size: 14px; line-height: 1.55; }
+.record-muted { margin: 0; color: var(--c-ink-4); font-family: var(--f-sans); font-size: 14px; line-height: 1.55; }
 .record-gate-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--c-hair-3); }
-.record-gate-summary strong { color: var(--c-accent); font-size: 16px; font-weight: 500; }.record-gate-summary.blocked strong { color: var(--c-alert); }
+.record-gate-summary strong { color: var(--c-accent); font-size: 14px; font-weight: 400; }.record-gate-summary.blocked strong { color: var(--c-alert); }
 .record-gate-summary span { color: var(--c-ink-3); font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .07em; text-align: right; text-transform: uppercase; }
 .record-stage-history > div { display: grid; grid-template-columns: 21px 1fr; gap: 11px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--c-hair-3); }
 .record-stage-history > div > span { width: 15px; height: 15px; display: grid; place-items: center; margin-top: 3px; border: 1px solid var(--c-accent); background: var(--c-accent); color: white; font-size: 8px; }
@@ -611,8 +629,6 @@ a { color: inherit; text-decoration: none; }
 .record-timeline header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }.record-timeline header strong { color: var(--c-ink-2); font-size: 13.5px; font-weight: 500; text-transform: capitalize; }
 .record-timeline header span { flex: 0 0 auto; color: var(--c-ink-4); font-family: var(--f-mono); font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase; }
 .record-timeline p { margin: 4px 0 0; color: var(--c-ink-3); font-size: 12.5px; line-height: 1.45; }
-.record-register { min-height: 120px; display: flex; flex-direction: column; justify-content: flex-end; }.record-register .record-block-title { margin-bottom: 12px; }
-.record-register > a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid var(--c-hair-2); color: var(--c-ink); font-size: 15px; font-weight: 500; text-decoration: none; }.record-register > a:hover { color: var(--c-accent); }
 .record-save-bar { position: sticky; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 40px; border-top: 1px solid var(--c-hair); background: rgba(255,255,255,.96); backdrop-filter: blur(10px); }
 .record-save-bar span { color: var(--c-ink-3); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
 

@@ -242,6 +242,19 @@ export interface WorkItemComment {
   body: string;
   created_at: string;
 }
+export interface WorkItemRegisterEntry {
+  id: string;
+  project_id: string;
+  work_item_id: string;
+  entry_type: "decision" | "issue" | "risk";
+  title: string;
+  description: string;
+  status: string;
+  owner: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
 export interface TelemetryEvent {
   id: string;
   project_id: string;

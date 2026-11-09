@@ -333,6 +333,8 @@ file bytes as base64 and stores the file before creating the evidence attachment
 - `list_work_item_activity`
 - `list_work_item_comments`
 - `add_work_item_comment`
+- `list_work_item_register_entries`
+- `record_work_item_register_entry`
 - `record_work_item_evidence`
 - `record_acceptance_result`
 - `list_project_records`
@@ -418,6 +420,14 @@ tools above.
 - `GET /api/project_artifacts?project_id=eq.<project-id>&artifact_key=eq.<key>` — read one record
 - `POST /api/rpc/upsert_project_artifact` — create or version a record
 - `PATCH /api/project_artifacts?id=eq.<record-id>` — update through PostgREST
+
+Decisions, issues, and risks that affect a specific feature or story are
+separate, normalized relations rather than links to an undifferentiated
+project document. The item drawer displays the related records by type and
+states `None registered` when a category is empty.
+
+- `GET /api/work_item_register_entries?work_item_id=eq.<work-item-id>` — list related records
+- `POST /api/rpc/upsert_work_item_register_entry` — create or update a related decision, issue, or risk
 
 ## Multi-worker ownership API
 

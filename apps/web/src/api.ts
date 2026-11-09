@@ -1,4 +1,4 @@
-import type { AcceptanceCriterionInput, ActivityEvent, AgentMetrics, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind, WorkerCapability } from "./types";
+import type { AcceptanceCriterionInput, ActivityEvent, AgentMetrics, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkItemRegisterEntry, WorkKind, WorkerCapability } from "./types";
 
 const BASE = "/api";
 
@@ -295,6 +295,7 @@ export const api = {
   }),
   workItemActivity: (id: string) => request<ActivityEvent[]>(`/activity_events?work_item_id=eq.${id}&order=created_at.asc`),
   workItemEvidence: (id: string) => request<WorkItemEvidence[]>(`/work_item_evidence?work_item_id=eq.${id}&order=created_at.asc`),
+  workItemRegisterEntries: (id: string) => request<WorkItemRegisterEntry[]>(`/work_item_register_entries?work_item_id=eq.${id}&order=entry_type.asc,created_at.asc`),
   workItemAssets: (id: string) => request<WorkItemAsset[]>(`/work_item_assets?work_item_id=eq.${id}&order=is_primary.desc,created_at.desc`),
   attachWorkItemAsset: async (value: { workItemId: string; assetType: WorkItemAssetType; sourceUrl: string; caption?: string; thumbnailUrl?: string; mimeType?: string; filename?: string; viewportWidth?: number; viewportHeight?: number; revision?: string; evidenceId?: string; makePrimary?: boolean; screenName?: string }) => {
     const created = await request<WorkItemAsset[]>("/rpc/attach_work_item_asset", {
