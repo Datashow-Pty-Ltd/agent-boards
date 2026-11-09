@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Select, Stack, Switch, TextInput, Textarea } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { api } from "../api";
 import type { AcceptanceCriterionInput, AcceptanceVerificationMethod, DesignCardType, Priority, WorkItem, WorkKind } from "../types";
@@ -60,14 +60,13 @@ export function CreateItemModal({ projectId, items, opened, onClose, onCreated }
       notifications.show({ title: "Could not create item", message: error instanceof Error ? error.message : String(error), color: "alert" });
     } finally { setSaving(false); }
   }
-  useEffect(() => { setParentId(null); }, [kind]);
   const parentKind = kind === "task" ? "story" : "feature";
   const parents = items.filter((item) => item.kind === parentKind).map((item) => ({ value: item.id, label: `${item.item_key} · ${item.title}` }));
   return (
     <Modal opened={opened} onClose={onClose} title={<span className="modal-title">Add to backlog</span>} size="lg">
       <Stack gap="md">
         <TextInput label="Title" value={title} onChange={(e) => setTitle(e.currentTarget.value)} autoFocus />
-        <Group grow><Select label="Type" value={kind} onChange={(v) => setKind((v ?? "story") as WorkKind)} data={["feature", "story", "task"]} /><Select label="Priority" value={priority} onChange={(v) => setPriority((v ?? "medium") as Priority)} data={["urgent", "high", "medium", "low"]} /></Group>
+        <Group grow><Select label="Type" value={kind} onChange={(v) => { setKind((v ?? "story") as WorkKind); setParentId(null); }} data={["feature", "story", "task"]} /><Select label="Priority" value={priority} onChange={(v) => setPriority((v ?? "medium") as Priority)} data={["urgent", "high", "medium", "low"]} /></Group>
         {kind !== "feature" && <Select label={kind === "task" ? "Parent story" : "Parent feature"} required={kind === "task"} clearable={kind !== "task"} searchable value={parentId} onChange={setParentId} data={parents} />}
         <Textarea label="Description" minRows={3} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
         {kind === "story" && <div className="acceptance-builder">

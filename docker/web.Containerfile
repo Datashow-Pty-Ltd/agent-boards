@@ -1,9 +1,17 @@
+FROM node:24-alpine AS build
+WORKDIR /workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/package.json
+RUN corepack enable && corepack prepare pnpm@10.26.1 --activate \
+  && pnpm install --filter @agent-boards/web... --frozen-lockfile
+COPY apps/web ./apps/web
+RUN pnpm --filter @agent-boards/web build
+
 FROM node:24-alpine
 WORKDIR /app
-COPY apps/web/package.json ./package.json
-COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
-RUN corepack enable && corepack prepare pnpm@10.26.1 --activate \
-  && pnpm install --frozen-lockfile=false
-COPY apps/web ./
+ENV PORT=5173
+COPY --from=build --chown=node:node /workspace/apps/web/dist ./dist
+COPY --chown=node:node docker/web-server.mjs ./server.mjs
+USER node
 EXPOSE 5173
-CMD ["pnpm", "dev"]
+CMD ["node", "server.mjs"]

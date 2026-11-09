@@ -41,7 +41,7 @@ export async function ensureMirror(projectId: string, repositoryUrl: string) {
     await run("git", ["--git-dir", target, "rev-parse", "--is-bare-repository"], { timeoutMs: 10_000 });
     await run("git", ["--git-dir", target, "remote", "set-url", "origin", safeUrl], { timeoutMs: 10_000 });
     await run("git", ["--git-dir", target, "fetch", "--prune", "--tags", "origin"], { timeoutMs: 300_000 });
-  } catch (error) {
+  } catch {
     await rm(target, { recursive: true, force: true });
     await run("git", ["clone", "--mirror", safeUrl, target], { timeoutMs: 300_000, maxBytes: 20 * 1024 * 1024 });
   }

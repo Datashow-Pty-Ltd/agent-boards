@@ -49,10 +49,12 @@ export function BoardPage() {
   useEffect(() => {
     if (!projectId) return;
     let disposed = false;
+    const movementQueueMap = movementQueues.current;
+    const movementVersionMap = movementVersions.current;
     const source = new EventSource(`/mcp?projectId=${encodeURIComponent(projectId)}`);
     const reconcileItem = async (workItemId: string, version: number) => {
       const changedItem = await api.workItem(workItemId);
-      if (disposed || movementVersions.current.get(workItemId) !== version) return;
+      if (disposed || movementVersionMap.get(workItemId) !== version) return;
       setData((current) => {
         if (!current) return current;
         return {
@@ -70,9 +72,9 @@ export function BoardPage() {
       const workItemId = event.work_item_id;
       const targetSlug = typeof event.details?.to === "string" ? event.details.to : "";
       if (!workItemId || !targetSlug) return;
-      const version = (movementVersions.current.get(workItemId) ?? 0) + 1;
-      movementVersions.current.set(workItemId, version);
-      const previous = movementQueues.current.get(workItemId) ?? Promise.resolve();
+      const version = (movementVersionMap.get(workItemId) ?? 0) + 1;
+      movementVersionMap.set(workItemId, version);
+      const previous = movementQueueMap.get(workItemId) ?? Promise.resolve();
       const queued = previous.catch(() => undefined).then(async () => {
         if (disposed) return;
         setData((current) => {
@@ -91,13 +93,13 @@ export function BoardPage() {
         });
         await new Promise((resolve) => window.setTimeout(resolve, CARD_TRANSITION_MS));
       }).then(async () => {
-        if (disposed || movementVersions.current.get(workItemId) !== version) return;
+        if (disposed || movementVersionMap.get(workItemId) !== version) return;
         await reconcileItem(workItemId, version);
-        if (movementQueues.current.get(workItemId) === queued) movementQueues.current.delete(workItemId);
+        if (movementQueueMap.get(workItemId) === queued) movementQueueMap.delete(workItemId);
       }).catch(() => {
-        if (movementQueues.current.get(workItemId) === queued) movementQueues.current.delete(workItemId);
+        if (movementQueueMap.get(workItemId) === queued) movementQueueMap.delete(workItemId);
       });
-      movementQueues.current.set(workItemId, queued);
+      movementQueueMap.set(workItemId, queued);
     };
     const applyChange = (message: Event) => {
       let event: BoardChangeEvent;
@@ -136,8 +138,8 @@ export function BoardPage() {
       disposed = true;
       source.removeEventListener("board.change", applyChange);
       source.close();
-      movementQueues.current.clear();
-      movementVersions.current.clear();
+      movementQueueMap.clear();
+      movementVersionMap.clear();
     };
   }, [projectId]);
   useEffect(() => { const open = () => createControls.open(); window.addEventListener("agent-boards:add-item", open); return () => window.removeEventListener("agent-boards:add-item", open); }, [createControls]);

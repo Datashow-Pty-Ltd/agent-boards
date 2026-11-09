@@ -27,6 +27,8 @@ Useful documentation:
 - [Architecture](docs/architecture.md)
 - [Docker and Apple Container build recipes](docs/container-recipes.md)
 - [Development and release checks](docs/development.md)
+- [Security assurance](docs/security-assurance.md)
+- [Release certification checklist](docs/certification/release-checklist.md)
 - [Claude Code setup](docs/clients/claude-code.md)
 - [Open-source readiness and remaining blockers](docs/open-source-readiness.md)
 - [Contributing](CONTRIBUTING.md) and [security policy](SECURITY.md)
@@ -65,8 +67,8 @@ repository mirrors in named volumes.
 | `agent-boards-rest` | PostgREST over the `api` schema |
 | `agent-boards-repo-intelligence` | Read-only exact-revision repository indexing, search, syntax graph, quality definitions, and cited maps |
 | `agent-boards-mcp` | Stateless Streamable HTTP MCP tools backed by PostgREST |
-| `agent-boards-web` | React Router + Mantine SPA with Vite HMR |
-| `agent-boards-gateway` | OpenResty gateway for the UI, REST API, MCP streaming, and HMR WebSockets |
+| `agent-boards-web` | Production-built React Router + Mantine SPA with self-hosted IBM Plex fonts |
+| `agent-boards-gateway` | OpenResty gateway for the UI, REST API, MCP streaming, and evidence media |
 
 The web app and MCP server deliberately use the same PostgREST surface. There
 is no second agent-only plan or hidden task store.

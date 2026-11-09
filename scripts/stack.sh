@@ -85,11 +85,6 @@ case "$ACTION" in
     # its ownership explicitly for the non-root MCP process on every startup.
     container exec --user root "$MCP" chown -R node:node /data/uploads
     container run -d --name "$WEB" --label "$STACK_LABEL" --network "$NETWORK,alias=web" \
-      --mount "type=bind,source=$ROOT_DIR/apps/web/src,target=/app/src" \
-      --env VITE_REST_PROXY=http://postgrest.rivyr:3000 \
-      --env VITE_MCP_PROXY=http://mcp.rivyr:8080 \
-      --env VITE_HMR_CLIENT_PORT="$HOST_PORT" \
-      --env VITE_USE_POLLING=true \
       agent-boards-web:dev >/dev/null
     container run -d --name "$GATEWAY" --label "$STACK_LABEL" --network "$NETWORK" \
       --publish "${HOST_PORT}:80" \

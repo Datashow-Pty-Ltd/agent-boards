@@ -30,11 +30,13 @@ Install Node.js 24 and pnpm 10.26.1 before running development or release
 checks:
 
 ```bash
-pnpm install
-pnpm release:check     # limits, types, tests and production builds
+pnpm install --frozen-lockfile
+pnpm release:check     # lint, limits, types, tests, builds, audit, secrets
+pnpm certify           # release gate plus SBOM, archive and verification
 pnpm test:live         # live MCP request through OpenResty; stack must run
+pnpm test:browser      # packaged UI navigation and keyboard smoke test
 pnpm test:claude       # real Claude Code MCP call; Claude must be authenticated
-pnpm release:archive   # allowlisted source archive; excludes local artefacts
+pnpm release:verify:public # final public gate; requires the selected licence
 ```
 
 The Claude check uses `--strict-mcp-config`, permits only `list_projects`, and

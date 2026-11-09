@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const [migration, server, instructions, capabilities, workerSkill, readme, drawer] = await Promise.all([
-  readFile(new URL('../../../database/migrations/029-design-card-completion-path.sql', import.meta.url), 'utf8'),
+  readFile(new URL('../../../database/migrations/030-design-card-completion-path.sql', import.meta.url), 'utf8'),
   readFile(new URL('../src/server.ts', import.meta.url), 'utf8'),
   readFile(new URL('../src/serverInstructions.ts', import.meta.url), 'utf8'),
   readFile(new URL('../src/serviceCapabilities.ts', import.meta.url), 'utf8'),

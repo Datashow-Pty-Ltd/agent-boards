@@ -1,6 +1,5 @@
 import express from "express";
 import { mkdir } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
 import { config, mirrorPath } from "./config.js";
 import { processNextJob } from "./indexer.js";
@@ -224,6 +223,7 @@ app.put("/v1/projects/:projectId/maps/:mapKey", asyncRoute(async (request, respo
 }));
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+  void _next;
   const status = error instanceof z.ZodError ? 400 : 500;
   response.status(status).json({ error: error instanceof Error ? error.message : String(error) });
 });

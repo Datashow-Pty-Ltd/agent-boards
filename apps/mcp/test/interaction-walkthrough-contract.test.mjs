@@ -5,7 +5,7 @@ import test from 'node:test'
 const serverSource = await readFile(new URL('../src/server.ts', import.meta.url), 'utf8')
 const validationSkill = await readFile(new URL('../skills/visual-validation/SKILL.md', import.meta.url), 'utf8')
 const migrationSource = await readFile(
-  new URL('../../../database/migrations/028-interaction-walkthrough-evidence.sql', import.meta.url),
+  new URL('../../../database/migrations/029-interaction-walkthrough-evidence.sql', import.meta.url),
   'utf8',
 )
 

@@ -59,15 +59,22 @@ function skillsDirectory() {
 }
 
 export function listServiceCapabilities(): ServiceCapabilityDescriptor[] {
-  return serviceCapabilityIds.map((id) => {
-    const { skillPath: _skillPath, ...descriptor } = descriptors[id];
-    return descriptor;
-  });
+  return serviceCapabilityIds.map(getServiceCapabilityDescriptor);
 }
 
 export function getServiceCapabilityDescriptor(id: ServiceCapabilityId): ServiceCapabilityDescriptor {
-  const { skillPath: _skillPath, ...descriptor } = descriptors[id];
-  return descriptor;
+  const source = descriptors[id];
+  return {
+    id: source.id,
+    title: source.title,
+    description: source.description,
+    resourceUri: source.resourceUri,
+    instructionsTool: source.instructionsTool,
+    requiredWhen: source.requiredWhen,
+    agentResponsibility: source.agentResponsibility,
+    boardResponsibility: source.boardResponsibility,
+    ...(source.productDesignRoute ? { productDesignRoute: source.productDesignRoute } : {}),
+  };
 }
 
 export async function readServiceCapability(id: ServiceCapabilityId) {

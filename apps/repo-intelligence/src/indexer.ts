@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.js";
 import { detectLanguage, extractTypeScriptIntelligence, isGeneratedPath } from "./languages.js";

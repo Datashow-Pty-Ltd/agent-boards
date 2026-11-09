@@ -90,13 +90,6 @@ services:
         condition: service_started
       mcp:
         condition: service_started
-    environment:
-      VITE_REST_PROXY: http://postgrest:3000
-      VITE_MCP_PROXY: http://mcp:8080
-      VITE_HMR_CLIENT_PORT: ${AGENT_BOARDS_PORT:-4173}
-      VITE_USE_POLLING: "true"
-    volumes:
-      - ./apps/web/src:/app/src
     labels: *agent-boards-labels
 
   gateway:

@@ -7,6 +7,7 @@ public Internet hosting.
 ## Automated release gate
 
 - [x] TypeScript typecheck
+- [x] ESLint with zero warnings
 - [x] unit and contract tests
 - [x] production builds
 - [x] source-size guardrails
@@ -15,6 +16,14 @@ public Internet hosting.
 - [x] first release scoped to trusted local or self-hosted use
 - [x] live MCP request through OpenResty
 - [x] real Claude Code discovery and tool invocation
+- [x] browser interaction test for Portfolio → project → Board and keyboard
+      dismissal of the work-item drawer
+- [x] production static web image with self-hosted fonts; no Vite development
+      server or external font request in the released stack
+- [x] tracked and untracked source secret-pattern scan
+- [x] CycloneDX production-dependency SBOM
+- [x] pinned GitHub Actions, multi-platform CI, CodeQL, dependency review,
+      OpenSSF Scorecard, Dependabot, checksums, and provenance workflows
 - [x] shared page-title and section-title typography contracts
 - [x] allowlisted source archive excludes local screenshots, build output,
       caches, editor state, and the obsolete vendored chart package
@@ -25,8 +34,6 @@ public Internet hosting.
 - [ ] Confirm the public project and package names.
 - [ ] Review seed data and history for private URLs, credentials, and customer
       information.
-- [ ] Add at least one browser interaction test for Portfolio → project → Board
-      and keyboard operation of the work-item drawer.
 - [ ] Add repository-intelligence parser fixtures and MCP error-path tests.
 - [ ] Capture narrow/mobile visual baselines; the current audit covers only a
       wide viewport.

@@ -11,7 +11,6 @@ import {
   attachRepositoryToContext,
   getProjectRepository,
   intelligence,
-  isRecord,
   rest,
   textResult,
 } from "./upstreams.js";
