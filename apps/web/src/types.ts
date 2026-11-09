@@ -91,6 +91,8 @@ export interface WorkItem {
   blocked_reason: string | null;
   owner: string | null;
   assignee: string | null;
+  claim_started_at: string | null;
+  claim_heartbeat_at: string | null;
   due_date: string | null;
   start_date: string | null;
   estimate_points: number;
@@ -103,6 +105,17 @@ export interface WorkItem {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+export interface WorkItemClaimStatus {
+  work_item_id: string;
+  owner: string | null;
+  active_worker: string | null;
+  execution_state: string | null;
+  claim_started_at: string | null;
+  last_heartbeat_at: string | null;
+  idle_seconds: number;
+  timeout_seconds: number;
+  takeover_eligible: boolean;
 }
 export interface WorkItemDependency {
   work_item_id: string;

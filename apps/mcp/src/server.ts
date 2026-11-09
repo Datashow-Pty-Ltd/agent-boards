@@ -23,6 +23,7 @@ import {
 import { serverInstructions } from "./serverInstructions.js";
 import { registerBoardSettingsTool } from "./boardSettingsTool.js";
 import { registerOwnershipTools } from "./ownershipTools.js";
+import { registerClaimLeaseTools } from "./claimLeaseTools.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const app = express();
@@ -97,6 +98,7 @@ function buildServer() {
 
   registerBoardSettingsTool(server);
   registerOwnershipTools(server);
+  registerClaimLeaseTools(server);
 
   server.registerTool(
     "list_service_capabilities",
@@ -524,7 +526,7 @@ function buildServer() {
       inputSchema: {
         workItemId: z.string().uuid(),
         stage: z.enum(["backlog", "analyse", "plan", "build", "validate", "review", "merge", "post_merge", "done"]),
-        actor: z.string().max(120).default("AI agent"),
+        actor: z.string().min(1).max(120),
         summary: z.string().max(500).optional(),
       },
     },

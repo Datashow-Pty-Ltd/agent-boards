@@ -15,6 +15,7 @@ Use the `agent-boards` MCP server as the authoritative project record and queue.
 - Use `claim_next_ready_work_item` as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively.
 - Use a stable worker name that is unique among concurrently connected agents. Pass that same name to claim, block, and release operations. Parallel workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story.
 - Treat `owner` as durable accountability and `assignee` as the current claim holder. Do not overwrite another active worker's claim. Use `set_work_item_owner` when a person explicitly assigns or transfers responsibility.
+- Treat a claim as a renewable lease. Call `heartbeat_work_item` with the claimed story ID and the same stable worker name at least every five minutes during long-running work, including while waiting on lengthy builds or test suites. Never take over another worker's idle claim yourself; only a person may authorize a transfer or release in Agent Boards.
 
 ## Work loop
 
@@ -30,6 +31,7 @@ Repeat the following sequence within the user's requested scope:
    - attached visual references and mockups define the intended presentation;
    - promotion acceptance criteria define what is required to enter the next stage.
 4. Perform the actual work in the repository. Keep the board synchronized as durable evidence becomes true, not in anticipation of it.
+   - Renew the claim with `heartbeat_work_item` at least every five minutes until the story is Done, blocked, or deliberately released.
    - After each child task is actually implemented, call `complete_task` with a concise outcome summary.
    - Child tasks do not traverse the story stage sequence; never use `move_work_item` or a generic execution-state update to complete them.
 5. Before each stage transition, call `get_work_item_context` and satisfy every blocking promotion criterion. Record the requested evidence, then move exactly one legal stage.
