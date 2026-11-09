@@ -34,7 +34,25 @@ services:
     command:
       - /bin/sh
       - -ec
-      - for migration in /migrations/*.sql; do psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -f "$$migration"; done
+      - |
+        psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -c "CREATE TABLE IF NOT EXISTS public.schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())"
+        baseline=$$(psql -At -h db -U agentboards -d agentboards -c "SELECT to_regprocedure('api.complete_task(uuid,text,text)') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.schema_migrations)")
+        if [ "$$baseline" = "t" ]; then
+          for migration in /migrations/*.sql; do
+            filename=$$(basename "$$migration")
+            case "$$filename" in
+              00[2-9]-*|0[12][0-9]-*|03[0-3]-*) psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -c "INSERT INTO public.schema_migrations(filename) VALUES ('$$filename') ON CONFLICT DO NOTHING" ;;
+            esac
+          done
+        fi
+        for migration in /migrations/*.sql; do
+          filename=$$(basename "$$migration")
+          applied=$$(psql -At -h db -U agentboards -d agentboards -c "SELECT EXISTS (SELECT 1 FROM public.schema_migrations WHERE filename = '$$filename')")
+          if [ "$$applied" = "f" ]; then
+            psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -f "$$migration"
+            psql -v ON_ERROR_STOP=1 -h db -U agentboards -d agentboards -c "INSERT INTO public.schema_migrations(filename) VALUES ('$$filename')"
+          fi
+        done
     labels: *agent-boards-labels
 
   postgrest:

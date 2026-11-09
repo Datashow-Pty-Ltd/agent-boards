@@ -21,7 +21,7 @@ export function CreateItemModal({ projectId, items, opened, onClose, onCreated }
   const [description, setDescription] = useState("");
   const [kind, setKind] = useState<WorkKind>("story");
   const [priority, setPriority] = useState<Priority>("medium");
-  const [assignee, setAssignee] = useState("");
+  const [owner, setOwner] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
   const [criteria, setCriteria] = useState<AcceptanceCriterionInput[]>([emptyCriterion()]);
   const [invariants, setInvariants] = useState("");
@@ -42,7 +42,7 @@ export function CreateItemModal({ projectId, items, opened, onClose, onCreated }
     try {
       await api.createItem({
         projectId, title: title.trim(), description: description.trim(), kind, priority,
-        assignee, parentId: parentId ?? undefined,
+        owner, parentId: parentId ?? undefined,
         acceptanceCriteria: kind === "story" ? criteria.map((criterion) => ({
           ...criterion,
           statement: criterion.statement.trim(),
@@ -55,7 +55,7 @@ export function CreateItemModal({ projectId, items, opened, onClose, onCreated }
         screenNames: kind === "story" && visualEvidenceRequired ? normalizedScreens : [],
       });
       notifications.show({ title: "Backlog item created", message: title, color: "accent" });
-      setTitle(""); setDescription(""); setCriteria([emptyCriterion()]); setInvariants(""); setVisualEvidenceRequired(false); setDesignCardType(null); setScreenNames(""); onCreated(); onClose();
+      setTitle(""); setDescription(""); setOwner(""); setCriteria([emptyCriterion()]); setInvariants(""); setVisualEvidenceRequired(false); setDesignCardType(null); setScreenNames(""); onCreated(); onClose();
     } catch (error) {
       notifications.show({ title: "Could not create item", message: error instanceof Error ? error.message : String(error), color: "alert" });
     } finally { setSaving(false); }
@@ -122,7 +122,7 @@ export function CreateItemModal({ projectId, items, opened, onClose, onCreated }
             required
           />}
         </>}
-        <TextInput label="Assignee" value={assignee} onChange={(e) => setAssignee(e.currentTarget.value)} placeholder="Person or agent" />
+        <TextInput label="Owner" value={owner} onChange={(e) => setOwner(e.currentTarget.value)} placeholder="Person, agent or worker" />
         <Group justify="flex-end"><Button onClick={onClose}>Cancel</Button><Button variant="filled" color="accent" loading={saving} disabled={!title.trim() || (kind === "task" && !parentId) || !criteriaValid || !designScopeValid} onClick={create}>Add item</Button></Group>
       </Stack>
     </Modal>

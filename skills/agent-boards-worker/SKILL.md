@@ -13,6 +13,8 @@ Use the `agent-boards` MCP server as the authoritative project record and queue.
 - Confirm the active workspace is the repository in which the claimed work should be implemented.
 - Do not claim work for a read-only request such as reviewing, explaining, or reporting backlog status.
 - Use `claim_next_ready_work_item` as the atomic queue entry point. Do not select a card manually or claim multiple stories speculatively.
+- Use a stable worker name that is unique among concurrently connected agents. Pass that same name to claim, block, and release operations. Parallel workers are expected to run independent loops; PostgreSQL prevents them from receiving the same story.
+- Treat `owner` as durable accountability and `assignee` as the current claim holder. Do not overwrite another active worker's claim. Use `set_work_item_owner` when a person explicitly assigns or transfers responsibility.
 
 ## Work loop
 

@@ -30,7 +30,7 @@ function WorkCard({ item, tasks = [], blockedBy = [], assets = [], visualChange 
       {blocked && <div className="blocked-row"><IconAlertTriangle size={13} />{item.blocked_reason || stateLabel(item)}</div>}
       {item.checklist.length > 0 && <div className="checklist-preview"><span>{checked}/{item.checklist.length}</span><div><i style={{ width: `${(checked / item.checklist.length) * 100}%` }} /></div></div>}
       {(tasks.length > 0 || blockedBy.length > 0) && <div className="story-signals">{tasks.length > 0 && <span><IconListCheck size={13} />{tasks.filter((task) => task.completed_at).length}/{tasks.length} tasks</span>}{blockedBy.length > 0 && <span className="dependency-block"><IconLock size={12} />{blockedBy.length} prerequisite{blockedBy.length === 1 ? "" : "s"}</span>}</div>}
-      <div className="card-foot"><span className={`state-dot ${item.execution_state ?? item.progress}`} /> <span>{stateLabel(item)}</span><span className="push">{item.assignee?.replace(" Agent", " AGT") ?? "Unassigned"}</span></div>
+      <div className="card-foot"><span className={`state-dot ${item.execution_state ?? item.progress}`} /> <span>{stateLabel(item)}</span><span className="push">{(item.assignee ?? item.owner)?.replace(" Agent", " AGT") ?? "Unowned"}</span></div>
       <div className="card-meta"><span>{item.priority}</span><span>{item.estimate_points} pt</span>{item.due_date && <span><IconClock size={11} /> {new Date(`${item.due_date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>}</div>
     </article>
   );

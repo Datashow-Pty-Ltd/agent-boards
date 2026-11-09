@@ -53,7 +53,7 @@ const visualAssetTypes: Array<{ value: WorkItemAssetType; label: string }> = [
 export function ItemDrawer({ item, items, stages, dependencies, opened, onClose, onChanged }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignee, setAssignee] = useState("");
+  const [owner, setOwner] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [execution, setExecution] = useState<ExecutionState>(null);
   const [blockedReason, setBlockedReason] = useState("");
@@ -90,7 +90,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     if (!item) return;
     setTitle(item.title);
     setDescription(item.description);
-    setAssignee(item.assignee ?? "");
+    setOwner(item.owner ?? "");
     setPriority(item.priority);
     setExecution(item.execution_state);
     setBlockedReason(item.blocked_reason ?? "");
@@ -186,9 +186,10 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     setSaving(true);
     try {
       await api.updateItem(item!.id, {
-        title: title.trim(), description, parent_id: parentId, assignee: assignee || null, priority,
+        title: title.trim(), description, parent_id: parentId, priority,
         execution_state: execution, blocked_reason: blockedReason || null,
       });
+      if (owner !== (item!.owner ?? "")) await api.setWorkItemOwner(item!.id, owner || null);
       if (item!.kind === "story" || item!.kind === "feature") await api.setDependencies(item!.id, prerequisiteIds);
       if ((item!.kind === "story" || item!.kind === "feature") && visualEvidenceRequired !== item!.visual_evidence_required) {
         await api.setVisualEvidenceRequirement(item!.id, visualEvidenceRequired);
@@ -416,7 +417,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
     closeButtonProps={{ "aria-label": "Close work item" }}
     overlayProps={{ backgroundOpacity: 0.14 }}
     classNames={{ root: "record-drawer", header: "record-drawer-header", body: "record-drawer-body", content: "record-drawer-content" }}
-    title={<div className="record-drawer-heading" tabIndex={-1} data-autofocus><div className="eyebrow">{item.item_key} · {stage?.title ?? item.kind}</div><h2>{item.title}</h2><div><span className={`state-dot ${item.execution_state ?? item.progress}`} />{item.execution_state?.replaceAll("_", " ") ?? item.progress.replaceAll("_", " ")}<i>·</i>{item.assignee ?? "Unassigned"}</div></div>}
+    title={<div className="record-drawer-heading" tabIndex={-1} data-autofocus><div className="eyebrow">{item.item_key} · {stage?.title ?? item.kind}</div><h2>{item.title}</h2><div><span className={`state-dot ${item.execution_state ?? item.progress}`} />{item.execution_state?.replaceAll("_", " ") ?? item.progress.replaceAll("_", " ")}<i>·</i>{item.assignee ?? (item.owner ? `Owner: ${item.owner}` : "Unowned")}</div></div>}
   >
     <section className="record-block record-notes">
       <div className="record-block-title">Notes</div>
@@ -492,6 +493,8 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
         <span>Stage</span><strong>{stage?.title ?? "Unknown"}</strong>
         <span>Progress</span><strong>{item.progress.replaceAll("_", " ")}</strong>
         <span>Priority</span><strong>{priority}</strong>
+        <span>Owner</span><strong>{item.owner ?? "Unowned"}</strong>
+        <span>Active worker</span><strong>{item.assignee ?? "None"}</strong>
         <span>Start</span><strong>{dateLabel(item.start_date)}</strong>
         <span>Due</span><strong>{dateLabel(item.due_date)}</strong>
       </div>
@@ -501,7 +504,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
           <TextInput label="Title" value={title} onChange={(event) => setTitle(event.currentTarget.value)} />
           {(item.kind === "story" || item.kind === "task") && <Select label={item.kind === "story" ? "Feature" : "Parent story"} searchable clearable={item.kind === "story"} value={parentId} onChange={setParentId} data={parentOptions.map((entry) => ({ value: entry.id, label: `${entry.item_key} · ${entry.title}` }))} />}
           <Group grow><Select label="Priority" value={priority} onChange={(value) => setPriority((value ?? "medium") as Priority)} data={["urgent", "high", "medium", "low"]} /><Select label="Execution" clearable value={execution} onChange={(value) => setExecution(value as ExecutionState)} data={["queued", "running", "waiting_for_human", "blocked", "failed", "complete", "cancelled"]} /></Group>
-          <TextInput label="Assignee" value={assignee} onChange={(event) => setAssignee(event.currentTarget.value)} />
+          <TextInput label="Owner" value={owner} onChange={(event) => setOwner(event.currentTarget.value)} placeholder="Person, agent or worker" />
           {(item.kind === "story" || item.kind === "feature") && <Switch
             checked={visualEvidenceRequired || inheritsVisualRequirement}
             onChange={(event) => setVisualEvidenceRequired(event.currentTarget.checked)}
