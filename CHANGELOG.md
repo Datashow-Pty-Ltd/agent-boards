@@ -7,6 +7,7 @@ gate.
 ## Unreleased
 
 - Prepared the first open-source release candidate.
+- Licensed Agent Boards under Apache License 2.0 with Datashow attribution.
 - Added a focused first-run overview, replayable project workflow settings,
   an MCP connection explainer with a copyable agent instruction, configurable
   board buckets and deterministic exit criteria, and Datashow attribution in

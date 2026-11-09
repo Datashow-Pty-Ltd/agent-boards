@@ -12,6 +12,7 @@ FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080
 RUN apk add --no-cache ffmpeg
+COPY LICENSE NOTICE /usr/local/share/licenses/agent-boards/
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

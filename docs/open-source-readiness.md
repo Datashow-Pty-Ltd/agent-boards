@@ -27,10 +27,11 @@ public Internet hosting.
 - [x] shared page-title and section-title typography contracts
 - [x] allowlisted source archive excludes local screenshots, build output,
       caches, editor state, and the obsolete vendored chart package
+- [x] Apache License 2.0 applied to the repository and workspace packages, with
+      Datashow attribution included in the source distribution
 
 ## Required before publishing the repository
 
-- [ ] Select and add an open-source `LICENSE` (legal/project-owner decision).
 - [ ] Confirm the public project and package names.
 - [ ] Review seed data and history for private URLs, credentials, and customer
       information.

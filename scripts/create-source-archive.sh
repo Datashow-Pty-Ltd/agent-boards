@@ -20,7 +20,7 @@ tar -czf "$OUTPUT" \
   --exclude='apps/web/vite.config.d.ts' \
   --exclude='.env' \
   --exclude='*.log' \
-  README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md AGENTS.md CLAUDE.md \
+  LICENSE NOTICE README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md AGENTS.md CLAUDE.md \
   .dockerignore .env.example .gitignore .github \
   package.json pnpm-lock.yaml pnpm-workspace.yaml eslint.config.mjs playwright.config.ts compose.yaml \
   apps database docker docs scripts skills tests

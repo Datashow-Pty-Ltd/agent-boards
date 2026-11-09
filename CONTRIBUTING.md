@@ -14,3 +14,7 @@ Thank you for helping improve Agent Boards.
 
 Pull requests should explain the user problem, the chosen boundary, migration
 impact, tests, and any security or compatibility consequences.
+
+Unless explicitly stated otherwise, contributions intentionally submitted for
+inclusion in Agent Boards are provided under the Apache License 2.0, consistent
+with section 5 of the project [LICENSE](LICENSE).

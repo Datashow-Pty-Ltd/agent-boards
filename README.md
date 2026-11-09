@@ -33,6 +33,11 @@ Useful documentation:
 - [Open-source readiness and remaining blockers](docs/open-source-readiness.md)
 - [Contributing](CONTRIBUTING.md) and [security policy](SECURITY.md)
 
+## License
+
+Agent Boards is licensed under the [Apache License 2.0](LICENSE). Copyright
+2026 Datashow Pty Ltd. See [NOTICE](NOTICE) for attribution information.
+
 ## Run on Apple Container
 
 Requirements: macOS with the Apple `container` CLI.
