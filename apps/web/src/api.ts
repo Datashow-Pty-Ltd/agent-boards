@@ -1,4 +1,4 @@
-import type { AcceptanceCriterionInput, ActivityEvent, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind } from "./types";
+import type { AcceptanceCriterionInput, ActivityEvent, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkKind } from "./types";
 
 const BASE = "/api";
 
@@ -217,6 +217,21 @@ export const api = {
   setWorkItemOwner: (id: string, owner: string | null) => request<WorkItem[]>("/rpc/set_work_item_owner", {
     method: "POST",
     body: JSON.stringify({ target_work_item_id: id, owner_name: owner, actor_name: "You" }),
+  }),
+  workItemClaimStatus: async (id: string) => {
+    const statuses = await request<WorkItemClaimStatus[]>("/rpc/get_work_item_claim_status", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: id }),
+    });
+    return statuses[0] ?? null;
+  },
+  authorizeIdleClaimTakeover: (id: string, worker: string) => request<WorkItem[]>("/rpc/authorize_idle_claim_takeover", {
+    method: "POST",
+    body: JSON.stringify({ target_work_item_id: id, new_worker_name: worker, human_name: "You" }),
+  }),
+  authorizeIdleClaimRelease: (id: string) => request<WorkItem[]>("/rpc/authorize_idle_claim_release", {
+    method: "POST",
+    body: JSON.stringify({ target_work_item_id: id, human_name: "You" }),
   }),
   workItem: async (id: string) => {
     const items = await request<WorkItem[]>(`/work_items?id=eq.${id}&limit=1`);

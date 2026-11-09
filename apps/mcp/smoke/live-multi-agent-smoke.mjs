@@ -15,6 +15,15 @@ async function api(path, init = {}) {
   return response.status === 204 ? null : response.json();
 }
 
+async function apiFailure(path, init = {}) {
+  const response = await fetch(`${gatewayUrl}/api${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", Prefer: "return=representation", ...init.headers },
+  });
+  assert.ok(!response.ok, `${init.method ?? "GET"} ${path} should have been rejected`);
+  return response.text();
+}
+
 function resultJson(result) {
   const text = result.content?.find((entry) => entry.type === "text")?.text;
   assert.ok(text, "MCP result should contain JSON text");
@@ -89,6 +98,50 @@ test("three MCP workers claim and move three different stories concurrently", as
     const stages = await api(`/board_stages?board_id=eq.${board.id}&slug=eq.analyse&select=id`);
     assert.equal(moved.length, 3);
     assert.ok(moved.every((story) => story.stage_id === stages[0].id), "all three cards should move independently to Analyse");
+
+    const heartbeat = resultJson(await clients[0].callTool({
+      name: "heartbeat_work_item",
+      arguments: { workItemId: stories[0].id, agentName: workerNames[0] },
+    }));
+    assert.equal(heartbeat[0].assignee, workerNames[0], "the active worker should renew its own claim");
+
+    const activeStatus = resultJson(await clients[0].callTool({
+      name: "get_work_item_claim_status",
+      arguments: { workItemId: stories[0].id },
+    }));
+    assert.equal(activeStatus[0].takeover_eligible, false, "a fresh claim cannot be taken over");
+    assert.match(await apiFailure("/rpc/authorize_idle_claim_takeover", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_name: "Codex Delta", human_name: "Release test" }),
+    }), /still active/i);
+
+    const staleTimestamp = new Date(Date.now() - 20 * 60_000).toISOString();
+    await api(`/work_items?id=eq.${stories[0].id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ claim_heartbeat_at: staleTimestamp }),
+    });
+    const [takenOver] = await api("/rpc/authorize_idle_claim_takeover", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: stories[0].id, new_worker_name: "Codex Delta", human_name: "Release test" }),
+    });
+    assert.equal(takenOver.owner, "Codex Delta", "human takeover should transfer durable ownership");
+    assert.equal(takenOver.assignee, "Codex Delta", "human takeover should transfer the active claim");
+    assert.match(await apiFailure("/rpc/move_work_item", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: stories[0].id, target_stage_slug: "plan", actor_name: workerNames[0] }),
+    }), /Only the active worker Codex Delta/i, "the disconnected worker must be fenced after transfer");
+
+    await api(`/work_items?id=eq.${stories[1].id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ claim_heartbeat_at: staleTimestamp }),
+    });
+    const [released] = await api("/rpc/authorize_idle_claim_release", {
+      method: "POST",
+      body: JSON.stringify({ target_work_item_id: stories[1].id, human_name: "Release test" }),
+    });
+    assert.equal(released.execution_state, "queued", "human release should return stale work to the queue");
+    assert.equal(released.assignee, null, "released work should not retain a worker");
+    assert.equal(released.owner, workerNames[1], "releasing a claim should preserve durable ownership");
   } finally {
     await Promise.allSettled(clients.map((client) => client.close()));
     await api(`/projects?id=eq.${project.id}`, { method: "DELETE" });

@@ -143,6 +143,15 @@ unowned work, and assigns durable ownership on the first claim. Every move is
 still emitted as an individual board event, so independently progressing cards
 use the existing one-card movement animation without refreshing the board.
 
+Claims are renewable leases rather than permanent locks. A worker calls
+`heartbeat_work_item` at least every five minutes while it is still working.
+After 15 minutes without a heartbeat, Agent Boards marks the claim as idle and
+offers a person two explicit recovery actions in the work-item drawer: transfer
+the claim and its durable ownership to a named worker, or release the claim back
+to the ready queue while preserving its owner. Active claims cannot be taken
+over. Each recovery is audit logged as a human action, and a disconnected old
+worker is prevented from moving the card after transfer.
+
 Stage progression is evidence-gated for stories. Analyse must produce analysis
 evidence, Plan must produce an implementation plan, Build must identify the
 implemented revision, and Validate must record passing tests for that revision.
@@ -375,7 +384,12 @@ tools above.
 - `POST /api/rpc/set_work_item_owner` — assign or clear durable ownership
 - `GET /api/project_owner_summary?project_id=eq.<project-id>` — owner workload counts
 - `POST /api/rpc/claim_next_work_package` — atomically claim one distinct ready story
-- MCP `set_work_item_owner` and `list_project_owners` expose the same ownership model
+- `POST /api/rpc/heartbeat_work_item` — renew the active worker's claim lease
+- `POST /api/rpc/get_work_item_claim_status` — inspect freshness and takeover eligibility
+- `POST /api/rpc/authorize_idle_claim_takeover` — human-authorized stale claim transfer
+- `POST /api/rpc/authorize_idle_claim_release` — human-authorized stale claim release
+- MCP ownership and heartbeat tools expose agent-safe operations; takeover and
+  forced release are intentionally UI/REST human operations
 
 Multiple workers are supported by the local trusted stack. This is concurrency,
 not tenant security: authentication, project-scoped authorization, and hosted

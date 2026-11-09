@@ -52,8 +52,10 @@ public Internet hosting.
 
 - Authenticated shared hosting with organisations, human and agent principals,
   project memberships, scoped OAuth access, PostgreSQL row-level security,
-  agent claim leases, tenant-isolated event streams, rate limits, object
-  storage, and an upload malware/content policy.
+  tenant-isolated event streams, rate limits, object storage, and an upload
+  malware/content policy. Claim leases exist in the trusted stack; hosted
+  deployments must additionally bind human takeover authority to an
+  authenticated principal.
 
 ## Manual client matrix
 

@@ -11,6 +11,8 @@ gate.
   and movement test.
 - Added a shared migration ledger so existing installations do not re-run
   historical data repairs when a new release migration is deployed.
+- Added renewable claim leases, worker heartbeats, idle-claim visibility,
+  human-authorized transfer or release, audit events, and stale-worker fencing.
 
 ## [0.1.0-alpha.1] - 2026-11-09
 

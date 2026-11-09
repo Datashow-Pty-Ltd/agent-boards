@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { api } from "../api";
 import type { AcceptanceCriterionInput, AcceptanceVerificationMethod, ActivityEvent, DesignCardType, ExecutionState, Priority, PromotionAcceptanceCriterion, Stage, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence } from "../types";
+import { ClaimControl } from "./ClaimControl";
 
 const acceptanceVerificationMethods: Array<{ value: AcceptanceVerificationMethod; label: string }> = [
   { value: "automated_test", label: "Automated test" },
@@ -423,6 +424,7 @@ export function ItemDrawer({ item, items, stages, dependencies, opened, onClose,
       <div className="record-block-title">Notes</div>
       <Textarea aria-label="Notes" autosize minRows={3} value={description} onChange={(event) => setDescription(event.currentTarget.value)} placeholder="Describe the intent and expected outcome." />
     </section>
+    <ClaimControl item={item} onChanged={onChanged} />
 
     {item.kind === "story" && <section className="record-block">
       <div className="record-block-title">Tasks <span>{childTasks.filter((task) => task.progress === "completed").length} / {childTasks.length}</span></div>
