@@ -24,10 +24,10 @@ public or creating a version tag.
 - [x] Apache License 2.0 and Datashow `NOTICE` selected and committed.
 - [x] Public name, description, maintainer contact, and security-reporting path
       confirmed.
-- [ ] Secret scanning, push protection, vulnerability alerts, and private
+- [x] Secret scanning, push protection, vulnerability alerts, and private
       vulnerability reporting enabled.
-- [ ] Required branch checks and review protection enabled for `main`.
-- [ ] CodeQL, dependency review, and OpenSSF Scorecard complete for the exact
+- [x] Required branch checks and review protection enabled for `main`.
+- [x] CodeQL, dependency review, and OpenSSF Scorecard complete for the exact
       public candidate commit.
 
 ## Manual review

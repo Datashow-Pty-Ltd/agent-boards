@@ -7,9 +7,12 @@ maintainer evidence, not independent certification.
 
 - Date: 9 November 2026
 - Candidate: `v0.1.0-alpha.1`
-- Evidence baseline: `293bead17d7bcbf4467d0e84f0bfaaeb2aac355b`
-- CI: [main run 42558870998](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/runs/42558870998)
-- Open-source security: [main run 42558870962](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/runs/42558870962)
+- Evidence baseline: [`v0.1.0-alpha.1`](https://github.com/Datashow-Pty-Ltd/agent-boards/releases/tag/v0.1.0-alpha.1)
+- CI: [successful `main` runs](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/workflows/ci.yml?query=branch%3Amain)
+- Open-source security: [successful `main` runs](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/workflows/security.yml?query=branch%3Amain)
+- CodeQL: [successful `main` runs](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/workflows/codeql.yml?query=branch%3Amain)
+- OpenSSF Scorecard: [successful `main` runs](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/workflows/scorecard.yml?query=branch%3Amain)
+- Release certification: [successful alpha runs](https://github.com/Datashow-Pty-Ltd/agent-boards/actions/workflows/release.yml)
 - Reviewer: Datashow maintainer
 - Intended scope: trusted local or self-hosted `v0.1.0-alpha.1` release
 
@@ -35,9 +38,10 @@ maintainer evidence, not independent certification.
 ## Public-repository controls
 
 CodeQL, dependency review, OpenSSF Scorecard, branch protection, secret
-scanning, push protection, and provenance attestations are enabled or recorded
-after the repository becomes public. Their workflows are committed but this
-pre-publication record does not claim results that do not yet exist.
+scanning, push protection, private vulnerability reporting, Dependabot security
+updates, and provenance attestations are enabled. CI, CodeQL, Scorecard, the
+open-source security workflow, and the release workflow pass on the public
+alpha source.
 
 ## Alpha limitations
 
