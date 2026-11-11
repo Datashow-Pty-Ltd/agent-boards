@@ -298,4 +298,6 @@ export interface ProjectArtifact {
   created_at: string;
   updated_at: string;
 }
-export interface BoardData { board: Board; stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; }
+/** The project's design approvals; screen mockups can be approved only once all three are set. */
+export interface BoardDesignGovernance { approved_concept_asset_id: string | null; design_concept_artifact_id: string | null; style_guide_artifact_id: string | null; }
+export interface BoardData { board: Board; stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; designGovernance?: BoardDesignGovernance | null; }

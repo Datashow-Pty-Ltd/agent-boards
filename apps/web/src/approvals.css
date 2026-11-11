@@ -1,0 +1,19 @@
+/* Approval actions at the bottom of Kanban cards. */
+.card-approvals { margin: 9px -12px -11px; padding: 8px 12px 10px; border-top: 1px solid var(--c-hair-3); background: var(--c-panel-2); cursor: default; }
+.card-approvals-title { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--c-accent); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.card-approvals-title span { padding: 0 5px; border: 1px solid currentColor; font-size: 10.5px; line-height: 15px; }
+.card-approval { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; padding: 5px 0; }
+.card-approval + .card-approval { border-top: 1px dashed var(--c-hair-2); }
+.card-approval-label { flex: 1 0 100%; display: -webkit-box; overflow: hidden; color: var(--c-ink-2); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.card-approval-btn { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 8px; border: 1px solid var(--c-hair-2); background: var(--c-panel); color: var(--c-ink-2); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+.card-approval-btn:hover:not(:disabled) { border-color: var(--c-ink-3); color: var(--c-ink); }
+.card-approval-btn:focus-visible, .card-approvals-more:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+.card-approval-btn:disabled { opacity: .5; cursor: progress; }
+.card-approval-btn.quiet { padding: 0 5px; border-color: transparent; background: transparent; }
+.card-approval-btn.approve { border-color: var(--c-accent); background: var(--c-accent); color: var(--c-panel); }
+.card-approval-btn.approve:hover:not(:disabled) { border-color: var(--c-accent); color: var(--c-panel); filter: brightness(1.08); }
+.card-approval-btn.reject { color: var(--c-alert); }
+.card-approval-btn.reject:hover:not(:disabled) { border-color: var(--c-alert); color: var(--c-alert); }
+.card-approvals-more { margin-top: 4px; padding: 0; border: 0; background: none; color: var(--c-ink-3); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+.card-approvals-more:hover { color: var(--c-ink); }
+@media (pointer: coarse) { .card-approval-btn { height: 32px; padding: 0 10px; } }

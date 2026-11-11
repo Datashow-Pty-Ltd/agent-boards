@@ -33,12 +33,16 @@ export function BoardPage() {
     try {
       const core = await api.boardCore(projectId);
       if (loadVersion.current !== version) return;
-      setData(core);
+      // Keep the previous dependencies, assets and governance until the
+      // refresh below lands, so a reload doesn't blank visuals and approvals.
+      setData((current) => current && current.board.id === core.board.id
+        ? { ...core, dependencies: current.dependencies, assets: current.assets, designGovernance: current.designGovernance }
+        : core);
       setSelected((current) => requestedItemId ? core.items.find((item) => item.id === requestedItemId) ?? null : current ? core.items.find((item) => item.id === current.id) ?? null : null);
       setError(null);
-      void Promise.all([api.boardDependencies(core.items), api.boardAssets(projectId)]).then(([dependencies, assets]) => {
+      void Promise.all([api.boardDependencies(core.items), api.boardAssets(projectId), api.boardDesignGovernance(projectId).catch(() => null)]).then(([dependencies, assets, designGovernance]) => {
         if (loadVersion.current !== version) return;
-        setData((current) => current ? { ...current, dependencies, assets } : current);
+        setData((current) => current ? { ...current, dependencies, assets, designGovernance } : current);
       }).catch(() => undefined);
     } catch (e) {
       if (loadVersion.current !== version) return;
@@ -177,7 +181,7 @@ export function BoardPage() {
           </ActionIcon>
         </div>
       </div>
-      <KanbanBoard stages={data.stages} items={data.items} dependencies={data.dependencies} assets={data.assets} onMove={move} onOpen={setSelected} />
+      <KanbanBoard stages={data.stages} items={data.items} dependencies={data.dependencies} assets={data.assets} designGovernance={data.designGovernance ?? null} onMove={move} onOpen={setSelected} onChanged={load} />
       <CreateItemModal projectId={projectId} items={data.items} opened={creating} onClose={createControls.close} onCreated={load} />
       <ItemDrawer item={selected} items={data.items} stages={data.stages} dependencies={data.dependencies} opened={Boolean(selected)} onClose={() => setSelected(null)} onChanged={load} onSelectItem={setSelected} />
     </div>

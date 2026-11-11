@@ -1,4 +1,4 @@
-import type { AcceptanceCriterionInput, ActivityEvent, AgentMetrics, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkItemRegisterEntry, WorkKind, WorkerCapability } from "./types";
+import type { BoardDesignGovernance, AcceptanceCriterionInput, ActivityEvent, AgentMetrics, AgentWorker, Board, BoardData, DesignCardType, Priority, ProjectArtifact, ProjectRepository, ProjectSummary, Stage, TelemetryEvent, WorkItem, WorkItemAsset, WorkItemAssetType, WorkItemClaimStatus, WorkItemComment, WorkItemContext, WorkItemDependency, WorkItemEvidence, WorkItemRegisterEntry, WorkKind, WorkerCapability } from "./types";
 
 const BASE = "/api";
 
@@ -132,6 +132,7 @@ export const api = {
     ? request<WorkItemDependency[]>(`/work_item_dependencies?work_item_id=in.(${items.map((item) => item.id).join(",")})&order=created_at.asc`)
     : Promise.resolve([]),
   boardAssets: (projectId: string) => request<WorkItemAsset[]>(`/work_item_assets?project_id=eq.${projectId}&order=is_primary.desc,created_at.desc`),
+  boardDesignGovernance: async (projectId: string): Promise<BoardDesignGovernance | null> => (await request<BoardDesignGovernance[]>(`/project_design_governance?project_id=eq.${projectId}&select=approved_concept_asset_id,design_concept_artifact_id,style_guide_artifact_id`))[0] ?? null,
   board: async (projectId: string): Promise<BoardData> => {
     const core = await api.boardCore(projectId);
     const [dependencies, assets] = await Promise.all([api.boardDependencies(core.items), api.boardAssets(projectId)]);
