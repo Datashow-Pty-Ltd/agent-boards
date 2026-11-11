@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { managedUploadFilename, maxUploadBytes, mediaExtensions } from "./inlineMedia.js";
+import { contentAddressedUploadFilename, managedUploadFilename, maxUploadBytes, mediaExtensions } from "./inlineMedia.js";
 
 export const uploadDirectory = process.env.UPLOAD_DIR ?? "/data/uploads";
 const execFileAsync = promisify(execFile);
@@ -28,7 +28,7 @@ export async function storeMedia(buffer: Buffer, mimeType: string, originalFilen
 
 export async function deleteStoredMedia(url: string) {
   const filename = url.replace(/^\/uploads\//, "");
-  if (!managedUploadFilename.test(filename)) return;
+  if (!managedUploadFilename.test(filename) || contentAddressedUploadFilename.test(filename)) return;
   await unlink(path.join(uploadDirectory, filename)).catch(() => undefined);
 }
 

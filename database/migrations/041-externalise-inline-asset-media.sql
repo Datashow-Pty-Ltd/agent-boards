@@ -21,6 +21,7 @@ BEGIN
     WHEN 'image/png;base64' THEN 'png'
     WHEN 'image/jpeg;base64' THEN 'jpg'
     WHEN 'image/webp;base64' THEN 'webp'
+    WHEN 'image/gif;base64' THEN 'gif'
     WHEN 'video/webm;base64' THEN 'webm'
     WHEN 'video/mp4;base64' THEN 'mp4'
     WHEN 'video/quicktime;base64' THEN 'mov'
@@ -82,6 +83,27 @@ LANGUAGE sql STABLE AS $$
   END
 $$;
 
+-- New rows and URL changes may not store inline media; clients upload it
+-- first (the MCP attach tool does this for agents). Rows that already hold
+-- inline media, such as payloads truncated by agent tooling, stay readable,
+-- and other columns on them can still change.
+CREATE OR REPLACE FUNCTION api.reject_inline_asset_media() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR NEW.source_url IS DISTINCT FROM OLD.source_url) AND substr(NEW.source_url, 1, 5) = 'data:'
+    OR (TG_OP = 'INSERT' OR NEW.thumbnail_url IS DISTINCT FROM OLD.thumbnail_url) AND substr(NEW.thumbnail_url, 1, 5) = 'data:' THEN
+    RAISE EXCEPTION 'Upload asset media to /uploads instead of storing it inline as a data: URL.' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS work_item_assets_reject_inline_media ON api.work_item_assets;
+CREATE TRIGGER work_item_assets_reject_inline_media
+BEFORE INSERT OR UPDATE OF source_url, thumbnail_url ON api.work_item_assets
+FOR EACH ROW EXECUTE FUNCTION api.reject_inline_asset_media();
+
 GRANT EXECUTE ON FUNCTION api.inline_media_upload_url(text) TO web_anon;
 GRANT EXECUTE ON FUNCTION api.externalise_inline_work_item_asset_media(uuid, text, text) TO web_anon;
 GRANT EXECUTE ON FUNCTION api.card_image_url(api.work_item_assets) TO web_anon;
+
+NOTIFY pgrst, 'reload schema';

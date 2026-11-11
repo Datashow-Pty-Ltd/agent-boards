@@ -1,6 +1,8 @@
 // Inline data: URL media is decoded into the managed uploads volume under a
 // content-addressed name, so work_item_assets rows hold a short /uploads URL
-// instead of megabytes of base64. This module has no relative imports so the
+// instead of megabytes of base64. Those files may be shared by several assets
+// and are never deleted by request handlers, so a file can't vanish between
+// being written and its row committing. This module has no relative imports so the
 // contract tests can load it directly.
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, open, rename, stat, unlink } from "node:fs/promises";
@@ -13,9 +15,12 @@ export const mediaExtensions: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/webp": "webp",
+  "image/gif": "gif",
 };
 export const maxUploadBytes = 50 * 1024 * 1024;
-export const managedUploadFilename = /^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp)$/i;
+export const managedUploadFilename = /^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp|gif)$/i;
+/** Content-addressed uploads from inline media; several assets can share one, so request paths never delete them. */
+export const contentAddressedUploadFilename = /^[0-9a-f]{64}\.[a-z0-9]+$/;
 
 const base64Payload = /^[A-Za-z0-9+/]*={0,2}$/;
 
@@ -48,7 +53,7 @@ export function parseInlineMedia(dataUrl: string) {
  * file and an existing file with the same name already holds the same bytes.
  * `created` is false when the file was already there.
  */
-export async function storeInlineMedia(dataUrl: string, directory: string) {
+export async function storeInlineMedia(dataUrl: string, directory: string): Promise<{ url: string; mimeType: string; size: number; created: boolean }> {
   const media = parseInlineMedia(dataUrl);
   if (!media) {
     throw new Error(`Inline media must be a complete base64 data: URL of type ${Object.keys(mediaExtensions).join(", ")}.`);
@@ -74,22 +79,6 @@ export async function storeInlineMedia(dataUrl: string, directory: string) {
     throw error;
   }
   return { url: media.url, mimeType: media.mimeType, size: media.buffer.length, created: !existing };
-}
-
-/** True when any asset still points at this upload, as source or thumbnail. */
-export async function uploadIsReferenced(rest: Rest, url: string) {
-  const filter = encodeURIComponent(`(source_url.eq."${url}",thumbnail_url.eq."${url}")`);
-  const rows = await rest(`/work_item_assets?select=id&limit=1&or=${filter}`);
-  return Array.isArray(rows) && rows.length > 0;
-}
-
-/** Removes an upload unless an asset still references it. Content-addressed files can be shared. */
-export async function removeUnreferencedUpload(rest: Rest, url: string, directory: string) {
-  const filename = url.replace(/^\/uploads\//, "");
-  if (!managedUploadFilename.test(filename)) return false;
-  if (await uploadIsReferenced(rest, url)) return false;
-  await unlink(path.join(directory, filename)).catch(() => undefined);
-  return true;
 }
 
 export type ExternaliseSummary = { candidates: number; converted: number; unchanged: number; undecodable: string[]; failed: string[]; bytesMoved: number };

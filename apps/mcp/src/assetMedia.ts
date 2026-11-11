@@ -1,34 +1,21 @@
-import { describeSummary, externaliseInlineAssets, removeUnreferencedUpload, storeInlineMedia } from "./inlineMedia.js";
+import { describeSummary, externaliseInlineAssets, storeInlineMedia } from "./inlineMedia.js";
 import { uploadDirectory } from "./media.js";
 import { rest } from "./upstreams.js";
 
 /**
  * Replaces inline data: URLs in an asset attachment with managed /uploads
- * URLs before the row is written. `discard` removes files this call created
- * if the attachment is then refused, unless another asset uses them.
+ * URLs before the row is written. When the source is inline, its media type
+ * is returned so the asset's mime_type matches the stored file. Files are
+ * content-addressed and kept even if the attachment is then refused.
  */
 export async function storeAttachmentMedia(sourceUrl: string, thumbnailUrl: string | undefined) {
-  const created: string[] = [];
-  const resolve = async (value: string) => {
-    if (!value.startsWith("data:")) return value;
-    const stored = await storeInlineMedia(value, uploadDirectory);
-    if (stored.created) created.push(stored.url);
-    return stored.url;
+  const source = sourceUrl.startsWith("data:") ? await storeInlineMedia(sourceUrl, uploadDirectory) : null;
+  const thumbnail = thumbnailUrl?.startsWith("data:") ? await storeInlineMedia(thumbnailUrl, uploadDirectory) : null;
+  return {
+    sourceUrl: source?.url ?? sourceUrl,
+    thumbnailUrl: thumbnail?.url ?? thumbnailUrl,
+    sourceMimeType: source?.mimeType ?? null,
   };
-  try {
-    return {
-      sourceUrl: await resolve(sourceUrl),
-      thumbnailUrl: thumbnailUrl === undefined ? undefined : await resolve(thumbnailUrl),
-      discard: () => discardUploads(created),
-    };
-  } catch (error) {
-    await discardUploads(created);
-    throw error;
-  }
-}
-
-async function discardUploads(urls: string[]) {
-  await Promise.all(urls.map((url) => removeUnreferencedUpload(rest, url, uploadDirectory).catch(() => false)));
 }
 
 const startupAttempts = 5;

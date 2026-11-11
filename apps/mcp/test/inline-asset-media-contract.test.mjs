@@ -5,14 +5,16 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import {
+  contentAddressedUploadFilename,
   externaliseInlineAssets,
+  managedUploadFilename,
   mediaExtensions,
   parseInlineMedia,
-  removeUnreferencedUpload,
   storeInlineMedia,
 } from '../src/inlineMedia.ts'
 
 const serverSource = await readFile(new URL('../src/server.ts', import.meta.url), 'utf8')
+const mediaSource = await readFile(new URL('../src/media.ts', import.meta.url), 'utf8')
 const migrationSource = await readFile(
   new URL('../../../database/migrations/041-externalise-inline-asset-media.sql', import.meta.url),
   'utf8',
@@ -67,6 +69,7 @@ test('inline media decodes to a content-addressed upload URL', () => {
   assert.equal(media.mimeType, 'image/png')
   assert.deepEqual(media.buffer, png)
   assert.equal(parseInlineMedia(pngDataUrl.replace('data:image/png', 'data:IMAGE/PNG'))?.url, pngUploadUrl)
+  assert.match(parseInlineMedia(`data:image/gif;base64,${Buffer.from('GIF89a').toString('base64')}`).url, /\.gif$/)
 })
 
 test('truncated, unpadded, unsupported and non-data URLs are refused', () => {
@@ -103,15 +106,14 @@ test('a damaged file with the same name is replaced', () => withDirectory(async 
   assert.deepEqual(await readFile(path.join(directory, path.basename(pngUploadUrl))), png)
 }))
 
-test('shared uploads are kept while any asset references them', () => withDirectory(async (directory) => {
-  await storeInlineMedia(pngDataUrl, directory)
-  const referenced = async () => [{ id: 'other' }]
-  const unreferenced = async () => []
-  assert.equal(await removeUnreferencedUpload(referenced, pngUploadUrl, directory), false)
-  assert.deepEqual(await readdir(directory), [path.basename(pngUploadUrl)])
-  assert.equal(await removeUnreferencedUpload(unreferenced, pngUploadUrl, directory), true)
-  assert.deepEqual(await readdir(directory), [])
-}))
+test('content-addressed uploads are served but never deleted by request handlers', () => {
+  const name = path.basename(pngUploadUrl)
+  assert.match(name, managedUploadFilename)
+  assert.match(name, contentAddressedUploadFilename)
+  assert.doesNotMatch('3f2b1c4e-0d6a-4f1e-9a51-2a7c1d9e8b10.png', contentAddressedUploadFilename)
+  assert.match(serverSource, /if \(!contentAddressedUploadFilename\.test\(request\.params\.filename\)\) await deleteStoredMedia\(url\)/)
+  assert.match(mediaSource, /contentAddressedUploadFilename\.test\(filename\)\) return;/)
+})
 
 test('backfill moves inline media without touching ids, approvals or revisions, and is idempotent', () => withDirectory(async (directory) => {
   const approved = {
@@ -138,6 +140,13 @@ test('backfill moves inline media without touching ids, approvals or revisions, 
   assert.deepEqual(board.table.get('a1'), { ...approved, source_url: pngUploadUrl, thumbnail_url: pngUploadUrl })
 }))
 
+test('database refuses new inline media but leaves existing rows editable', () => {
+  assert.match(migrationSource, /BEFORE INSERT OR UPDATE OF source_url, thumbnail_url ON api\.work_item_assets/)
+  assert.match(migrationSource, /TG_OP = 'INSERT' OR NEW\.source_url IS DISTINCT FROM OLD\.source_url\) AND substr\(NEW\.source_url, 1, 5\) = 'data:'/)
+  assert.match(migrationSource, /TG_OP = 'INSERT' OR NEW\.thumbnail_url IS DISTINCT FROM OLD\.thumbnail_url\) AND substr\(NEW\.thumbnail_url, 1, 5\) = 'data:'/)
+  assert.match(migrationSource, /NOTIFY pgrst, 'reload schema';/)
+})
+
 test('database only accepts the upload URL derived from the row and preserves review state', () => {
   assert.match(migrationSource, /IF api\.inline_media_upload_url\(asset\.source_url\) IS DISTINCT FROM expected_source_url THEN/)
   assert.match(migrationSource, /SET source_url = next_source, thumbnail_url = next_thumbnail\n/)
@@ -149,7 +158,6 @@ test('database only accepts the upload URL derived from the row and preserves re
 test('MCP attachments store inline media before the row is written and the backfill runs on start', () => {
   const attach = serverSource.slice(serverSource.indexOf('"attach_work_item_asset",'), serverSource.indexOf('"attach_validation_recording",'))
   assert.ok(attach.indexOf('storeAttachmentMedia(') < attach.indexOf('/rpc/attach_work_item_asset'))
-  assert.match(attach, /await discard\(\)/)
+  assert.match(attach, /asset_mime_type: sourceMimeType \?\? mimeType/)
   assert.match(serverSource, /startInlineAssetExternalisation\(\)/)
-  assert.match(serverSource, /uploadIsReferenced\(rest, url\)/)
 })
