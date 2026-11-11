@@ -8,22 +8,26 @@ ACTION=${1:-up}
 # executing it. As with Compose, variables already set in the caller's
 # environment win over the file.
 if [ -f "$ROOT_DIR/.env" ]; then
+  cr=$(printf '\r')
   while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%"$cr"}
+    line=$(printf '%s' "$line" | sed 's/^[[:space:]]*//')
     case "$line" in
       ''|'#'*) continue ;;
     esac
     key=${line%%=*}
     [ "$key" = "$line" ] && continue
-    key=$(printf '%s' "$key" | sed 's/^export[[:space:]]*//; s/[[:space:]]*$//')
+    key=$(printf '%s' "$key" | sed 's/^export[[:space:]][[:space:]]*//; s/[[:space:]]*$//')
     case "$key" in
       ''|[0-9]*|*[!A-Za-z0-9_]*) continue ;;
     esac
     eval "already=\${${key}+set}"
     [ -n "$already" ] && continue
-    value=${line#*=}
+    value=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//')
     case "$value" in
       \"*\") value=${value#\"}; value=${value%\"} ;;
       \'*\') value=${value#\'}; value=${value%\'} ;;
+      *) value=$(printf '%s' "$value" | sed 's/[[:space:]]#.*$//; s/[[:space:]]*$//') ;;
     esac
     export "$key=$value"
   done < "$ROOT_DIR/.env"
@@ -197,7 +201,7 @@ case "$ACTION" in
       agent-boards-gateway:dev >/dev/null
 
     case "$BIND_ADDRESS" in
-      0.0.0.0|'') URL_HOST=127.0.0.1 ;;
+      0.0.0.0|::|'') URL_HOST=127.0.0.1 ;;
       *:*) URL_HOST="[$BIND_ADDRESS]" ;;
       *) URL_HOST=$BIND_ADDRESS ;;
     esac
