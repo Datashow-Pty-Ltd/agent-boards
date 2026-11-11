@@ -80,7 +80,7 @@ test("get_board defaults to summary and MCP results are compact JSON", () => {
 test("Apple stack binds loopback, refuses a busy port and can use the GitHub CLI token", () => {
   assert.match(stack, /HOST_PORT=\$\{AGENT_BOARDS_PORT:-4747\}/);
   assert.match(stack, /--publish "\$\{BIND_ADDRESS\}:\$\{HOST_PORT\}:8080"/);
-  assert.match(stack, /check_port_free\n\s+resolve_github_token/);
+  assert.match(stack, /check_port_free\r?\n\s+resolve_github_token/);
   assert.match(stack, /AGENT_BOARDS_USE_GH_TOKEN:-1/);
   assert.doesNotMatch(stack, /\. "\$ROOT_DIR\/\.env"/);
   assert.doesNotMatch(stack, /echo[^\n]*\$\{?GITHUB_TOKEN/);
