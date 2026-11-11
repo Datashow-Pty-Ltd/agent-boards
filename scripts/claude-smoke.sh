@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-AGENT_BOARDS_URL=${AGENT_BOARDS_URL:-http://127.0.0.1:4173}
+AGENT_BOARDS_URL=${AGENT_BOARDS_URL:-http://127.0.0.1:4747}
 CLAUDE_MODEL=${CLAUDE_MODEL:-sonnet}
 
 if ! command -v claude >/dev/null 2>&1; then

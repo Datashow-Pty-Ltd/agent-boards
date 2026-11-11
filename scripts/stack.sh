@@ -3,6 +3,35 @@ set -eu
 
 ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 ACTION=${1:-up}
+
+# Same settings file as Docker Compose: read KEY=VALUE lines from .env without
+# executing it. As with Compose, variables already set in the caller's
+# environment win over the file.
+if [ -f "$ROOT_DIR/.env" ]; then
+  cr=$(printf '\r')
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%"$cr"}
+    line=$(printf '%s' "$line" | sed 's/^[[:space:]]*//')
+    case "$line" in
+      ''|'#'*) continue ;;
+    esac
+    key=${line%%=*}
+    [ "$key" = "$line" ] && continue
+    key=$(printf '%s' "$key" | sed 's/^export[[:space:]][[:space:]]*//; s/[[:space:]]*$//')
+    case "$key" in
+      ''|[0-9]*|*[!A-Za-z0-9_]*) continue ;;
+    esac
+    eval "already=\${${key}+set}"
+    [ -n "$already" ] && continue
+    value=$(printf '%s' "${line#*=}" | sed 's/^[[:space:]]*//')
+    case "$value" in
+      \"*\") value=${value#\"}; value=${value%\"} ;;
+      \'*\') value=${value#\'}; value=${value%\'} ;;
+      *) value=$(printf '%s' "$value" | sed 's/[[:space:]]#.*$//; s/[[:space:]]*$//') ;;
+    esac
+    export "$key=$value"
+  done < "$ROOT_DIR/.env"
+fi
 NETWORK=agent-boards-net
 VOLUME=agent-boards-postgres
 UPLOAD_VOLUME=agent-boards-uploads
@@ -13,7 +42,8 @@ INTELLIGENCE=agent-boards-repo-intelligence
 MCP=agent-boards-mcp
 WEB=agent-boards-web
 GATEWAY=agent-boards-gateway
-HOST_PORT=${AGENT_BOARDS_PORT:-4173}
+HOST_PORT=${AGENT_BOARDS_PORT:-4747}
+BIND_ADDRESS=${AGENT_BOARDS_BIND:-127.0.0.1}
 STACK_LABEL=com.datashow.application.stack=agent-boards
 DNS_DOMAIN=${AGENT_BOARDS_DNS_DOMAIN:-$(container system property list | awk '
   /^\[dns\]$/ { in_dns = 1; next }
@@ -25,6 +55,50 @@ if [ -z "$DNS_DOMAIN" ]; then
   echo "Apple Container has no DNS domain configured." >&2
   exit 1
 fi
+
+# Fails when another process already listens on the gateway port. A process
+# bound to 127.0.0.1 would otherwise silently shadow the gateway for local
+# clients such as MCP, which then see that process's 404s.
+# Retries briefly, because a just-deleted gateway's runtime helper can take a
+# moment to close its socket. lsof only sees this user's processes; a socket
+# owned by another user still makes the publish itself fail.
+check_port_free() {
+  command -v lsof >/dev/null 2>&1 || return 0
+  tries=0
+  while :; do
+    listeners=$(lsof -nP -iTCP:"$HOST_PORT" -sTCP:LISTEN 2>/dev/null | awk 'NR > 1 { print $1 " (pid " $2 ") " $9 }' | sort -u)
+    [ -z "$listeners" ] && return 0
+    tries=$((tries + 1))
+    [ "$tries" -ge 10 ] && break
+    sleep 1
+  done
+  if [ -n "$listeners" ]; then
+    echo "Port ${HOST_PORT} is already in use:" >&2
+    echo "$listeners" >&2
+    echo "Stop that process or set AGENT_BOARDS_PORT to a free port." >&2
+    exit 1
+  fi
+}
+
+# Private repository indexing needs a GitHub token. Fall back to the GitHub
+# CLI's credential when GITHUB_TOKEN is not set; the value is never printed.
+# The gh credential is usually broad (repo, workflow, read:org); set
+# AGENT_BOARDS_USE_GH_TOKEN=0 to disable the fallback, or export a narrow
+# read-only GITHUB_TOKEN instead.
+resolve_github_token() {
+  if [ -z "${GITHUB_TOKEN:-}" ] && [ "${AGENT_BOARDS_USE_GH_TOKEN:-1}" != "0" ] && command -v gh >/dev/null 2>&1; then
+    GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
+    if [ -n "$GITHUB_TOKEN" ]; then
+      echo "Using the GitHub CLI credential for private repository indexing (AGENT_BOARDS_USE_GH_TOKEN=0 disables this)."
+    fi
+  fi
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    export GITHUB_TOKEN
+  else
+    unset GITHUB_TOKEN
+    echo "No GITHUB_TOKEN or GitHub CLI login found; only public repositories can be indexed."
+  fi
+}
 
 delete_containers() {
   for name in "$GATEWAY" "$WEB" "$MCP" "$INTELLIGENCE" "$REST" "$DB"; do
@@ -53,6 +127,8 @@ case "$ACTION" in
     container volume create -s 4G "$UPLOAD_VOLUME" >/dev/null 2>&1 || true
     container volume create -s 8G "$REPOSITORY_VOLUME" >/dev/null 2>&1 || true
     delete_containers
+    check_port_free
+    resolve_github_token
 
     build_images
 
@@ -119,15 +195,20 @@ case "$ACTION" in
     container run -d --name "$WEB" --label "$STACK_LABEL" --dns-domain "$DNS_DOMAIN" --network "$NETWORK,alias=web" \
       agent-boards-web:dev >/dev/null
     container run -d --name "$GATEWAY" --label "$STACK_LABEL" --dns-domain "$DNS_DOMAIN" --network "$NETWORK" \
-      --publish "${HOST_PORT}:8080" \
+      --publish "${BIND_ADDRESS}:${HOST_PORT}:8080" \
       --env WEB_HOST="web.${DNS_DOMAIN}" --env REST_HOST="postgrest.${DNS_DOMAIN}" \
       --env MCP_HOST="mcp.${DNS_DOMAIN}" --env INTELLIGENCE_HOST="intelligence.${DNS_DOMAIN}" \
       agent-boards-gateway:dev >/dev/null
 
-    echo "Agent Boards is running at http://localhost:${HOST_PORT}"
-    echo "REST API: http://localhost:${HOST_PORT}/api/"
-    echo "MCP:      http://localhost:${HOST_PORT}/mcp"
-    echo "Intel:    http://localhost:${HOST_PORT}/intelligence/"
+    case "$BIND_ADDRESS" in
+      0.0.0.0|::|'') URL_HOST=127.0.0.1 ;;
+      *:*) URL_HOST="[$BIND_ADDRESS]" ;;
+      *) URL_HOST=$BIND_ADDRESS ;;
+    esac
+    echo "Agent Boards is running at http://${URL_HOST}:${HOST_PORT}"
+    echo "REST API: http://${URL_HOST}:${HOST_PORT}/api/"
+    echo "MCP:      http://${URL_HOST}:${HOST_PORT}/mcp"
+    echo "Intel:    http://${URL_HOST}:${HOST_PORT}/intelligence/"
     ;;
   down)
     delete_containers

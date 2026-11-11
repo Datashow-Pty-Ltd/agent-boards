@@ -26,7 +26,7 @@ docker compose up -d --wait
 
 For the shortest first run, combine those operations with
 `docker compose up --build -d --wait`. The stack publishes OpenResty at
-<http://127.0.0.1:4173> by default.
+<http://127.0.0.1:4747> by default.
 
 ```bash
 docker compose ps
@@ -76,17 +76,18 @@ AGENT_BOARDS_PORT=8080 ./scripts/stack.sh up
 The equivalent `pnpm docker:*` and `pnpm apple:*` shortcuts are available to
 contributors who already have Node.js and pnpm installed. They are not required
 to run the containerised application. For private GitHub repository indexing,
-export `GITHUB_TOKEN` before starting either recipe. It is passed only to the
-repository-intelligence service.
+export `GITHUB_TOKEN` before starting either recipe (the Apple Container recipe
+falls back to `gh auth token`). It is passed only to the repository-intelligence
+service.
 
 ## Verification
 
 With either stack running:
 
 ```bash
-curl --fail http://127.0.0.1:4173/health
-curl --fail http://127.0.0.1:4173/mcp/health
-curl --fail http://127.0.0.1:4173/intelligence/health
+curl --fail http://127.0.0.1:4747/health
+curl --fail http://127.0.0.1:4747/mcp/health
+curl --fail http://127.0.0.1:4747/intelligence/health
 pnpm test:live
 ```
 

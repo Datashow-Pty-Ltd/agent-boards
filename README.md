@@ -34,7 +34,7 @@ cp .env.example .env
 docker compose up --build -d --wait
 ```
 
-Open <http://127.0.0.1:4173>. The OpenResty gateway exposes the UI, REST API,
+Open <http://127.0.0.1:4747>. The OpenResty gateway exposes the UI, REST API,
 MCP Streamable HTTP endpoint, repository intelligence, and managed evidence
 uploads on one local origin. A fresh installation includes the Agent Boards
 Demo project shown above; it is created only when the database contains no
@@ -65,12 +65,12 @@ Requirements: macOS with the Apple `container` CLI.
 ./scripts/stack.sh up
 ```
 
-Open <http://localhost:4173>. The same gateway exposes:
+Open <http://127.0.0.1:4747>. The same gateway exposes:
 
-- PostgREST: <http://localhost:4173/api/>
-- MCP (Streamable HTTP): <http://localhost:4173/mcp>
-- MCP health: <http://localhost:4173/mcp/health>
-- Repository intelligence: <http://localhost:4173/intelligence/>
+- PostgREST: <http://127.0.0.1:4747/api/>
+- MCP (Streamable HTTP): <http://127.0.0.1:4747/mcp>
+- MCP health: <http://127.0.0.1:4747/mcp/health>
+- Repository intelligence: <http://127.0.0.1:4747/intelligence/>
 
 Use `AGENT_BOARDS_PORT=8080 ./scripts/stack.sh up` to choose another host port.
 
@@ -408,7 +408,10 @@ not passing results—the agent or CI still executes them and records evidence.
 - `GET|PUT /intelligence/v1/projects/<project-id>/maps[/<map-key>]` — read or persist cited maps
 
 For private GitHub repositories, export `GITHUB_TOKEN` before starting the
-Apple Container or Docker Compose stack.
+Apple Container or Docker Compose stack. When `GITHUB_TOKEN` is unset, the Apple
+Container script uses `gh auth token` if the GitHub CLI is logged in. That
+credential is usually broad (repo, workflow, read:org), so prefer a read-only
+fine-grained token, or set `AGENT_BOARDS_USE_GH_TOKEN=0` to disable the fallback.
 The stack forwards it only to the repository-intelligence container and Git
 uses a host-scoped request header; credentials are never embedded in the
 persisted repository URL.

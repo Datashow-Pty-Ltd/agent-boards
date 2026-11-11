@@ -6,6 +6,21 @@ gate.
 
 ## [Unreleased]
 
+- Moved the default gateway port from 4173 (Vite's preview default, which
+  could silently shadow the gateway for loopback clients) to 4747. The Apple
+  Container stack now binds to `AGENT_BOARDS_BIND` (default 127.0.0.1), loads
+  `.env` (caller environment wins), and refuses to start when the port is
+  already in use. Existing installs: update MCP client URLs to
+  `http://127.0.0.1:4747/mcp`, or set `AGENT_BOARDS_PORT=4173` to keep the old
+  port.
+- The Apple Container stack falls back to `gh auth token` when `GITHUB_TOKEN`
+  is unset, so private repositories can be indexed without exporting a token
+  (`AGENT_BOARDS_USE_GH_TOKEN=0` disables it).
+- `create_backlog_item` now returns the card as saved, including required
+  worker capabilities and interaction-evidence flags set after creation.
+- `get_board` returns a compact summary by default (card headers, latest
+  evidence per type, prerequisites, metrics); `detail: "full"` keeps the
+  previous payload. MCP tool results are emitted as compact JSON.
 - Replaced optional run telemetry in project KPIs with database-owned claim
   sessions. Agent time now follows claim/heartbeat lifecycle with idle-timeout
   caps, while token and cost totals remain explicitly host-reported and show

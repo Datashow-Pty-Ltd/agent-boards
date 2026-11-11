@@ -16,7 +16,7 @@ cp .env.example .env
 docker compose up --build -d --wait
 ```
 
-Open <http://127.0.0.1:4173>. Stop it with `docker compose down`.
+Open <http://127.0.0.1:4747>. Stop it with `docker compose down`.
 
 On macOS, the Apple Container path is available through
 `./scripts/stack.sh up`. Both paths use the same images, migrations, gateway, and

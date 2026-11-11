@@ -10,7 +10,7 @@ Add this server to a project-level `.mcp.json`:
   "mcpServers": {
     "agent-boards": {
       "type": "http",
-      "url": "http://127.0.0.1:4173/mcp"
+      "url": "http://127.0.0.1:4747/mcp"
     }
   }
 }

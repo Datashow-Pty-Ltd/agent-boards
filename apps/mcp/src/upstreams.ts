@@ -35,8 +35,9 @@ export async function intelligence(path: string, init: RequestInit = {}): Promis
   return response.json();
 }
 
+/** Tool results are compact JSON: indentation inflated every response by a fifth. */
 export function textResult(value: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
+  return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

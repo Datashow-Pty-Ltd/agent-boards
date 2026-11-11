@@ -4,7 +4,7 @@ import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
-const gatewayUrl = process.env.AGENT_BOARDS_URL ?? "http://127.0.0.1:4173";
+const gatewayUrl = process.env.AGENT_BOARDS_URL ?? "http://127.0.0.1:4747";
 
 async function api(path, init = {}) {
   const response = await fetch(`${gatewayUrl}/api${path}`, {

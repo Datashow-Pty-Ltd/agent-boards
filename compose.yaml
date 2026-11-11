@@ -5,6 +5,7 @@ x-agent-boards-labels: &agent-boards-labels
 
 services:
   db:
+    image: agent-boards-db
     build:
       context: .
       dockerfile: docker/postgres.Containerfile
@@ -23,7 +24,10 @@ services:
     labels: *agent-boards-labels
 
   migrate:
-    image: postgres:17-alpine
+    # Reuses the patched database image built for db rather than the raw
+    # upstream postgres image, which carries unpatched Alpine packages.
+    image: agent-boards-db
+    pull_policy: never
     depends_on:
       db:
         condition: service_healthy
@@ -129,7 +133,7 @@ services:
       MCP_HOST: mcp
       INTELLIGENCE_HOST: intelligence
     ports:
-      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4173}:8080"
+      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4747}:8080"
     labels: *agent-boards-labels
 
 volumes:
