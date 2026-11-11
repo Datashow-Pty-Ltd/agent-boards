@@ -1,12 +1,15 @@
-import type { BoardDesignGovernance, WorkItem, WorkItemAsset } from "./types";
+import type { BoardAsset, BoardDesignGovernance, WorkItem } from "./types";
+
+/** The asset fields approval decisions depend on; board assets and full assets both qualify. */
+export type ApprovalAsset = Pick<BoardAsset, "id" | "work_item_id" | "asset_type" | "screen_name" | "approval_status" | "revision" | "caption" | "recording_review_status" | "created_at">;
 
 /** A human decision a board card is waiting on, surfaced at the bottom of the card. */
-export type PendingApproval =
-  | { kind: "choose_concept"; options: WorkItemAsset[] }
-  | { kind: "mockup"; asset: WorkItemAsset }
-  | { kind: "recording"; asset: WorkItemAsset };
+export type PendingApproval<A extends ApprovalAsset = BoardAsset> =
+  | { kind: "choose_concept"; options: A[] }
+  | { kind: "mockup"; asset: A }
+  | { kind: "recording"; asset: A };
 
-const isDesignOption = (asset: WorkItemAsset) => asset.asset_type === "mockup" || asset.asset_type === "wireframe";
+const isDesignOption = (asset: ApprovalAsset) => asset.asset_type === "mockup" || asset.asset_type === "wireframe";
 
 /** Screen mockups can be approved only after the concept, design concept and design system are approved. */
 export function mockupApprovalsOpen(governance: BoardDesignGovernance | null | undefined) {
@@ -25,15 +28,15 @@ export function mockupApprovalsOpen(governance: BoardDesignGovernance | null | u
  * - Assets in `decided` (decisions just made on this card) are left out so a
  *   decision cannot be submitted twice while the board reloads.
  */
-export function pendingApprovals(
+export function pendingApprovals<A extends ApprovalAsset>(
   item: WorkItem,
-  assets: WorkItemAsset[],
+  assets: A[],
   governance: BoardDesignGovernance | null | undefined,
   decided: ReadonlySet<string> = new Set(),
-): PendingApproval[] {
+): PendingApproval<A>[] {
   if (item.completed_at || item.kind !== "story") return [];
   const own = assets.filter((asset) => asset.work_item_id === item.id && !decided.has(asset.id));
-  const pending: PendingApproval[] = [];
+  const pending: PendingApproval<A>[] = [];
 
   if (item.design_card_type === "visual_concept") {
     const options = assets.filter((asset) => asset.work_item_id === item.id && isDesignOption(asset));
@@ -54,7 +57,7 @@ export function pendingApprovals(
   return pending;
 }
 
-export function approvalLabel(approval: PendingApproval) {
+export function approvalLabel(approval: PendingApproval<ApprovalAsset>) {
   switch (approval.kind) {
     case "choose_concept": return `Choose from ${approval.options.length} concepts`;
     case "mockup": return approval.asset.screen_name ?? "Screen mockup";

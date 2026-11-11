@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { IconCheck, IconEye, IconX } from "@tabler/icons-react";
 import { api } from "../api";
 import { approvalLabel, pendingApprovals, type PendingApproval } from "../approvalActions";
-import type { BoardDesignGovernance, WorkItem, WorkItemAsset } from "../types";
+import type { BoardDesignGovernance, WorkItem, BoardAsset } from "../types";
 
 /** How many approvals a card shows before deferring the rest to the drawer. */
 const VISIBLE_APPROVALS = 2;
@@ -16,7 +16,7 @@ const keyOf = (approval: PendingApproval) => approval.kind === "choose_concept" 
  * Approval actions at the bottom of a board card. Clicks stop at the footer so
  * they never open the drawer; decisions that need a comparison open it.
  */
-export function CardApprovals({ item, assets, governance, onOpen, onChanged }: { item: WorkItem; assets: WorkItemAsset[]; governance: BoardDesignGovernance | null; onOpen?: () => void; onChanged?: () => Promise<void> | void }) {
+export function CardApprovals({ item, assets, governance, onOpen, onChanged }: { item: WorkItem; assets: BoardAsset[]; governance: BoardDesignGovernance | null; onOpen?: () => void; onChanged?: () => Promise<void> | void }) {
   const [busy, setBusy] = useState<Busy>(null);
   // Decisions made here, hidden at once so they cannot be submitted twice
   // while the board reloads.

@@ -3,19 +3,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { managedUploadFilename, maxUploadBytes, mediaExtensions } from "./inlineMedia.js";
 
 export const uploadDirectory = process.env.UPLOAD_DIR ?? "/data/uploads";
-const maxUploadBytes = 50 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
-
-const mediaExtensions: Record<string, string> = {
-  "video/webm": "webm",
-  "video/mp4": "mp4",
-  "video/quicktime": "mov",
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-};
 
 export async function storeMedia(buffer: Buffer, mimeType: string, originalFilename: string) {
   const extension = mediaExtensions[mimeType];
@@ -37,7 +28,7 @@ export async function storeMedia(buffer: Buffer, mimeType: string, originalFilen
 
 export async function deleteStoredMedia(url: string) {
   const filename = url.replace(/^\/uploads\//, "");
-  if (!/^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp)$/i.test(filename)) return;
+  if (!managedUploadFilename.test(filename)) return;
   await unlink(path.join(uploadDirectory, filename)).catch(() => undefined);
 }
 

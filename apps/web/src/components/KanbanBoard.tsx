@@ -5,7 +5,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { IconAlertTriangle, IconCheck, IconClock, IconGripVertical, IconListCheck, IconLock, IconPhoto } from "@tabler/icons-react";
 import { groupStagesIntoDeliveryPhases } from "../deliveryPhases";
 import { CardApprovals } from "./CardApprovals";
-import type { BoardDesignGovernance, Stage, WorkItem, WorkItemAsset, WorkItemDependency } from "../types";
+import type { BoardDesignGovernance, Stage, WorkItem, BoardAsset, WorkItemDependency } from "../types";
 
 function stateLabel(item: WorkItem) {
   if (item.execution_state) return item.execution_state.replaceAll("_", " ");
@@ -13,12 +13,12 @@ function stateLabel(item: WorkItem) {
   return item.progress.replaceAll("_", " ");
 }
 
-function WorkCard({ item, tasks = [], blockedBy = [], assets = [], visualChange = false, selected, onOpen, onChanged, governance = null, overlay = false }: { item: WorkItem; tasks?: WorkItem[]; blockedBy?: WorkItem[]; assets?: WorkItemAsset[]; visualChange?: boolean; selected?: boolean; onOpen?: () => void; onChanged?: () => Promise<void> | void; governance?: BoardDesignGovernance | null; overlay?: boolean }) {
+function WorkCard({ item, tasks = [], blockedBy = [], assets = [], visualChange = false, selected, onOpen, onChanged, governance = null, overlay = false }: { item: WorkItem; tasks?: WorkItem[]; blockedBy?: WorkItem[]; assets?: BoardAsset[]; visualChange?: boolean; selected?: boolean; onOpen?: () => void; onChanged?: () => Promise<void> | void; governance?: BoardDesignGovernance | null; overlay?: boolean }) {
   const drag = useDraggable({ id: item.id, disabled: overlay, data: { type: "item", item } });
   const style = { transform: CSS.Translate.toString(drag.transform), opacity: drag.isDragging ? 0.35 : 1 };
   const blocked = item.execution_state === "blocked" || item.execution_state === "failed" || item.execution_state === "waiting_for_human";
   const checked = item.checklist.filter((entry) => entry.checked).length;
-  const cardVisuals = assets.filter((asset) => asset.mime_type.startsWith("image/"));
+  const cardVisuals = assets.filter((asset) => asset.mime_type.startsWith("image/") && asset.card_image_url);
   const primaryVisual = cardVisuals.find((asset) => asset.is_primary) ?? cardVisuals[0];
   return (
     <article ref={drag.setNodeRef} data-work-item-id={item.id} style={style} className={`work-card ${item.execution_state === "running" ? "running" : ""} ${selected ? "selected" : ""} ${overlay ? "overlay" : ""}`} onClick={onOpen}>
@@ -26,7 +26,7 @@ function WorkCard({ item, tasks = [], blockedBy = [], assets = [], visualChange 
       <div className="card-key">{item.item_key} · {item.kind}</div>
       <h4>{item.title}</h4>
       {item.design_card_type && <div className="card-design-role">{item.design_card_type === "visual_concept" ? "Visual concept design" : "Screen mockups"}</div>}
-      {primaryVisual && <div className="card-visual"><img src={primaryVisual.thumbnail_url ?? primaryVisual.source_url} alt={primaryVisual.caption || `${item.title} visual`} loading="lazy" decoding="async" /><span>{primaryVisual.asset_type.replaceAll("_", " ")}</span></div>}
+      {primaryVisual && <div className="card-visual"><img src={primaryVisual.card_image_url ?? undefined} alt={primaryVisual.caption || `${item.title} visual`} loading="lazy" decoding="async" /><span>{primaryVisual.asset_type.replaceAll("_", " ")}</span></div>}
       {!primaryVisual && visualChange && <div className="card-visual-required"><IconPhoto size={13} />Visual change</div>}
       {blocked && <div className="blocked-row"><IconAlertTriangle size={13} />{item.blocked_reason || stateLabel(item)}</div>}
       {item.checklist.length > 0 && <div className="checklist-preview"><span>{checked}/{item.checklist.length}</span><div><i style={{ width: `${(checked / item.checklist.length) * 100}%` }} /></div></div>}
@@ -60,7 +60,7 @@ function FeatureCard({ item, stories, onOpen }: { item: WorkItem; stories: WorkI
   </button>;
 }
 
-function StageSection({ stage, items, features, allItems, dependencies, assets, governance, onOpen, onChanged }: { stage: Stage; items: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; governance: BoardDesignGovernance | null; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
+function StageSection({ stage, items, features, allItems, dependencies, assets, governance, onOpen, onChanged }: { stage: Stage; items: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: BoardAsset[]; governance: BoardDesignGovernance | null; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
   const drop = useDroppable({ id: stage.id, data: { type: "stage", stage } });
   const overLimit = stage.wip_limit !== null && items.length > stage.wip_limit;
   const openGroups = [features.length > 0 ? "features" : "", items.length > 0 ? "stories" : ""].filter(Boolean);
@@ -89,7 +89,7 @@ function StageSection({ stage, items, features, allItems, dependencies, assets, 
   );
 }
 
-function PhaseLane({ title, phaseStages, stories, features, allItems, dependencies, assets, governance, onOpen, onChanged }: { title: string; phaseStages: Stage[]; stories: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; governance: BoardDesignGovernance | null; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
+function PhaseLane({ title, phaseStages, stories, features, allItems, dependencies, assets, governance, onOpen, onChanged }: { title: string; phaseStages: Stage[]; stories: WorkItem[]; features: WorkItem[]; allItems: WorkItem[]; dependencies: WorkItemDependency[]; assets: BoardAsset[]; governance: BoardDesignGovernance | null; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
   const itemCount = phaseStages.reduce((total, stage) => total + stories.filter((item) => item.stage_id === stage.id).length, 0);
   const featureCount = phaseStages.reduce((total, stage) => total + features.filter((item) => item.stage_id === stage.id).length, 0);
   const stageSummary = phaseStages.map((stage) => stage.slug === "post_merge" ? "Post-merge" : stage.title).join(" · ");
@@ -115,7 +115,7 @@ function PhaseLane({ title, phaseStages, stories, features, allItems, dependenci
   </section>;
 }
 
-export function KanbanBoard({ stages, items, dependencies, assets, designGovernance = null, onMove, onOpen, onChanged }: { stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; designGovernance?: BoardDesignGovernance | null; onMove: (itemId: string, stage: Stage) => Promise<void>; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
+export function KanbanBoard({ stages, items, dependencies, assets, designGovernance = null, onMove, onOpen, onChanged }: { stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: BoardAsset[]; designGovernance?: BoardDesignGovernance | null; onMove: (itemId: string, stage: Stage) => Promise<void>; onOpen: (item: WorkItem) => void; onChanged?: () => Promise<void> | void }) {
   const [active, setActive] = useState<WorkItem | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const previousPositions = useRef(new Map<string, DOMRect>());
