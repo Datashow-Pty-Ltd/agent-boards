@@ -119,7 +119,7 @@ export function BoardPage() {
       }
       void Promise.all([
         api.workItem(event.work_item_id),
-        event.event_type?.includes("visual_asset") || event.event_type === "work_item.validation_recording_attached" ? api.workItemAssets(event.work_item_id) : Promise.resolve(null),
+        event.event_type?.includes("visual_asset") || event.event_type === "work_item.validation_recording_attached" ? api.boardItemAssets(event.work_item_id) : Promise.resolve(null),
       ]).then(([changedItem, changedAssets]) => {
         if (disposed) return;
         setData((current) => {

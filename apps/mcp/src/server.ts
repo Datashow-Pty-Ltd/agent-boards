@@ -20,6 +20,8 @@ import {
   storeMedia,
   uploadDirectory,
 } from "./media.js";
+import { startInlineAssetExternalisation, storeAttachmentMedia } from "./assetMedia.js";
+import { contentAddressedUploadFilename } from "./inlineMedia.js";
 import { serverInstructions } from "./serverInstructions.js";
 import { registerBoardSettingsTool } from "./boardSettingsTool.js";
 import { registerOwnershipTools } from "./ownershipTools.js";
@@ -1057,7 +1059,7 @@ function buildServer() {
   server.registerTool(
     "attach_work_item_asset",
     {
-      description: "Attach visual proof media to a story. Revision-bearing implementation, validation images, and validation recordings must identify the exact source revision.",
+      description: "Attach visual proof media to a story. Revision-bearing implementation, validation images, and validation recordings must identify the exact source revision. A data: URL must be complete base64 PNG, JPEG, WebP, GIF, WebM, MP4 or QuickTime; it is stored as a managed /uploads file and its media type is used as mimeType.",
       inputSchema: {
         workItemId: z.string().uuid(),
         assetType: visualAssetTypeSchema,
@@ -1075,7 +1077,8 @@ function buildServer() {
         screenName: z.string().min(1).max(240).optional().describe("Required for a screen mockup; must match a screen/state/viewport declared on the owning story or design card."),
       },
     },
-    async ({ workItemId, assetType, sourceUrl, actor, caption, thumbnailUrl, mimeType, filename, viewportWidth, viewportHeight, revision, evidenceId, makePrimary, screenName }) => {
+    async ({ workItemId, assetType, sourceUrl: requestedSourceUrl, actor, caption, thumbnailUrl: requestedThumbnailUrl, mimeType, filename, viewportWidth, viewportHeight, revision, evidenceId, makePrimary, screenName }) => {
+      const { sourceUrl, thumbnailUrl, sourceMimeType } = await storeAttachmentMedia(requestedSourceUrl, requestedThumbnailUrl);
       const created = await rest("/rpc/attach_work_item_asset", {
         method: "POST",
         body: JSON.stringify({
@@ -1085,7 +1088,7 @@ function buildServer() {
           actor_name: actor,
           asset_caption: caption,
           asset_thumbnail_url: thumbnailUrl ?? null,
-          asset_mime_type: mimeType,
+          asset_mime_type: sourceMimeType ?? mimeType,
           asset_filename: filename ?? null,
           asset_viewport_width: viewportWidth ?? null,
           asset_viewport_height: viewportHeight ?? null,
@@ -1459,7 +1462,7 @@ app.post("/uploads", express.raw({ type: () => true, limit: "50mb" }), async (re
 
 app.get("/uploads/:filename", (request, response) => {
   const filename = request.params.filename;
-  if (!/^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp)$/i.test(filename)) {
+  if (!/^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp|gif)$/i.test(filename)) {
     response.status(404).end();
     return;
   }
@@ -1472,11 +1475,12 @@ app.get("/uploads/:filename", (request, response) => {
 
 app.delete("/uploads/:filename", async (request, response) => {
   const url = `/uploads/${request.params.filename}`;
-  if (!/^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp)$/i.test(request.params.filename)) {
+  if (!/^[0-9a-f-]+\.(webm|mp4|mov|png|jpg|webp|gif)$/i.test(request.params.filename)) {
     response.status(404).end();
     return;
   }
-  await deleteStoredMedia(url);
+  // Content-addressed uploads can be shared by several assets, so keep them.
+  if (!contentAddressedUploadFilename.test(request.params.filename)) await deleteStoredMedia(url);
   response.status(204).end();
 });
 
@@ -1557,4 +1561,7 @@ app.get("/mcp", (request, response) => {
 });
 app.delete("/mcp", (_request, response) => response.status(405).json({ error: "This stateless MCP endpoint has no sessions." }));
 
-app.listen(port, "0.0.0.0", () => console.log(`Agent Boards MCP listening on ${port}`));
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Agent Boards MCP listening on ${port}`);
+  startInlineAssetExternalisation();
+});

@@ -300,4 +300,10 @@ export interface ProjectArtifact {
 }
 /** The project's design approvals; screen mockups can be approved only once all three are set. */
 export interface BoardDesignGovernance { approved_concept_asset_id: string | null; design_concept_artifact_id: string | null; style_guide_artifact_id: string | null; }
-export interface BoardData { board: Board; stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: WorkItemAsset[]; designGovernance?: BoardDesignGovernance | null; }
+/** Asset columns a board card needs. Never includes source_url, which can hold large inline media. */
+export const BOARD_ASSET_COLUMNS = ["id", "work_item_id", "asset_type", "mime_type", "caption", "screen_name", "approval_status", "revision", "recording_review_status", "is_primary", "created_at"] as const;
+export type BoardAsset = Pick<WorkItemAsset, typeof BOARD_ASSET_COLUMNS[number]> & {
+  /** Thumbnail or source URL for the card image; null when the only copy is an inline data: URL. */
+  card_image_url: string | null;
+};
+export interface BoardData { board: Board; stages: Stage[]; items: WorkItem[]; dependencies: WorkItemDependency[]; assets: BoardAsset[]; designGovernance?: BoardDesignGovernance | null; }

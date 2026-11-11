@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { approvalLabel, mockupApprovalsOpen, pendingApprovals } from "./approvalActions";
-import type { BoardDesignGovernance, WorkItem, WorkItemAsset } from "./types";
+import type { BoardAsset, BoardDesignGovernance, WorkItem } from "./types";
 
 const OPEN: BoardDesignGovernance = { approved_concept_asset_id: "c", design_concept_artifact_id: "d", style_guide_artifact_id: "s" };
 
@@ -17,18 +17,16 @@ function item(overrides: Partial<WorkItem> = {}): WorkItem {
   } as WorkItem;
 }
 
-function asset(id: string, overrides: Partial<WorkItemAsset> = {}): WorkItemAsset {
+function asset(id: string, overrides: Partial<BoardAsset> = {}): BoardAsset {
   return {
-    id, work_item_id: "item", asset_type: "mockup", source_url: `/uploads/${id}.png`, thumbnail_url: null,
-    mime_type: "image/png", filename: null, caption: "", viewport_width: null, viewport_height: null, revision: null,
-    screen_name: null, approval_status: "candidate", approved_by: null, approved_at: null, recording_manifest: {},
-    recording_review_status: "not_required", recording_reviewed_by: null, recording_reviewed_at: null,
-    recording_review_notes: null, is_primary: false, created_by: "agent", created_at: "2026-11-01T00:00:00Z",
+    id, work_item_id: "item", asset_type: "mockup", card_image_url: `/uploads/${id}.png`, mime_type: "image/png",
+    caption: "", revision: null, screen_name: null, approval_status: "candidate", recording_review_status: "not_required",
+    is_primary: false, created_at: "2026-11-01T00:00:00Z",
     ...overrides,
-  } as WorkItemAsset;
+  };
 }
 
-const recording = (id: string, overrides: Partial<WorkItemAsset> = {}) =>
+const recording = (id: string, overrides: Partial<BoardAsset> = {}) =>
   asset(id, { asset_type: "validation_recording", mime_type: "video/mp4", recording_review_status: "pending", ...overrides });
 
 describe("concept cards", () => {
