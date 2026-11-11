@@ -5,6 +5,7 @@ x-agent-boards-labels: &agent-boards-labels
 
 services:
   db:
+    image: agent-boards-db
     build:
       context: .
       dockerfile: docker/postgres.Containerfile
@@ -23,7 +24,10 @@ services:
     labels: *agent-boards-labels
 
   migrate:
-    image: postgres:17-alpine
+    # Reuses the patched database image built for db rather than the raw
+    # upstream postgres image, which carries unpatched Alpine packages.
+    image: agent-boards-db
+    pull_policy: never
     depends_on:
       db:
         condition: service_healthy
