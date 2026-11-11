@@ -6,6 +6,11 @@ gate.
 
 ## [Unreleased]
 
+- Kanban story cards now show the human approvals they are waiting on in a
+  "Needs your approval" footer: approve screen mockups, approve or reject
+  walkthrough recordings, and select a single visual concept without opening
+  the card. Several concept alternatives open the card for a side-by-side
+  comparison instead of being approved blind.
 - Moved the default gateway port from 4173 (Vite's preview default, which
   could silently shadow the gateway for loopback clients) to 4747. The Apple
   Container stack now binds to `AGENT_BOARDS_BIND` (default 127.0.0.1), loads

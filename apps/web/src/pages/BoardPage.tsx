@@ -177,7 +177,7 @@ export function BoardPage() {
           </ActionIcon>
         </div>
       </div>
-      <KanbanBoard stages={data.stages} items={data.items} dependencies={data.dependencies} assets={data.assets} onMove={move} onOpen={setSelected} />
+      <KanbanBoard stages={data.stages} items={data.items} dependencies={data.dependencies} assets={data.assets} onMove={move} onOpen={setSelected} onChanged={load} />
       <CreateItemModal projectId={projectId} items={data.items} opened={creating} onClose={createControls.close} onCreated={load} />
       <ItemDrawer item={selected} items={data.items} stages={data.stages} dependencies={data.dependencies} opened={Boolean(selected)} onClose={() => setSelected(null)} onChanged={load} onSelectItem={setSelected} />
     </div>
