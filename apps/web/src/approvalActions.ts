@@ -21,7 +21,7 @@ export function mockupApprovalsOpen(governance: BoardDesignGovernance | null | u
  *   server refuses fewer), so it is reported as one choose_concept entry that
  *   opens the card rather than a blind one-click approval.
  * - Screen mockups appear only once project design governance is approved.
- * - Only the newest pending walkthrough recording is offered.
+ * - Only the newest walkthrough recording is offered, and only while pending.
  * - Assets in `decided` (decisions just made on this card) are left out so a
  *   decision cannot be submitted twice while the board reloads.
  */
@@ -45,10 +45,12 @@ export function pendingApprovals(
     }
   }
 
-  const recordings = own
-    .filter((asset) => asset.asset_type === "validation_recording" && asset.recording_review_status === "pending")
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  if (recordings[0]) pending.push({ kind: "recording", asset: recordings[0] });
+  // Only the newest recording counts for the interaction gate, so offer it
+  // while it is still pending and never fall back to a superseded one.
+  const newest = assets
+    .filter((asset) => asset.work_item_id === item.id && asset.asset_type === "validation_recording")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (newest && newest.recording_review_status === "pending" && !decided.has(newest.id)) pending.push({ kind: "recording", asset: newest });
   return pending;
 }
 

@@ -1,5 +1,5 @@
 import { notifications } from "@mantine/notifications";
-import { useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { IconCheck, IconEye, IconX } from "@tabler/icons-react";
 import { api } from "../api";
 import { approvalLabel, pendingApprovals, type PendingApproval } from "../approvalActions";
@@ -22,19 +22,20 @@ export function CardApprovals({ item, assets, governance, onOpen, onChanged }: {
   // while the board reloads.
   const [decided, setDecided] = useState<ReadonlySet<string>>(new Set());
   const footer = useRef<HTMLElement>(null);
+  const focusAfterDecision = useRef(false);
+  // Runs after React commits the render without the decided row, so focus
+  // never lands on the button that was just used.
+  useEffect(() => {
+    if (!focusAfterDecision.current) return;
+    focusAfterDecision.current = false;
+    const card = document.querySelector(`[data-work-item-id="${CSS.escape(item.id)}"]`);
+    const next = card?.querySelector<HTMLElement>(".card-approval-btn.approve:not([disabled]), .card-approval-btn.compare") ?? card?.querySelector<HTMLElement>(".drag-handle");
+    next?.focus();
+  }, [decided, item.id]);
   const pending = pendingApprovals(item, assets, governance, decided);
   if (!pending.length) return null;
   const visible = pending.slice(0, VISIBLE_APPROVALS);
   const hidden = pending.length - visible.length;
-
-  function restoreFocus() {
-    // Keep keyboard users in place: the next decision on this card, else the card's drag handle.
-    requestAnimationFrame(() => {
-      const card = footer.current?.closest(".work-card") ?? document.querySelector(`[data-work-item-id="${item.id}"]`);
-      const next = card?.querySelector<HTMLElement>(".card-approval-btn.approve, .card-approval-btn.compare") ?? card?.querySelector<HTMLElement>(".drag-handle");
-      next?.focus();
-    });
-  }
 
   async function decide(approval: PendingApproval, approved: boolean) {
     if (approval.kind === "choose_concept" || busy) return;
@@ -43,9 +44,10 @@ export function CardApprovals({ item, assets, governance, onOpen, onChanged }: {
     try {
       if (approval.kind === "mockup") await api.approveScreenMockup(asset.id);
       if (approval.kind === "recording") await api.reviewValidationRecording(asset.id, approved);
+      // Keep keyboard users in place: the next decision on this card, else its drag handle.
+      focusAfterDecision.current = true;
       setDecided((current) => new Set(current).add(asset.id));
       notifications.show({ title: `${approvalLabel(approval)} ${approved ? "approved" : "rejected"}`, message: item.item_key, color: approved ? "accent" : "alert" });
-      restoreFocus();
       void onChanged?.();
     } catch (error) {
       notifications.show({ title: "Could not record the decision", message: error instanceof Error ? error.message : String(error), color: "alert" });

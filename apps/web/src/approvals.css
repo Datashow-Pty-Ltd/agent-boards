@@ -1,5 +1,5 @@
 /* Approval actions at the bottom of Kanban cards. */
-.card-approvals { margin: 9px -12px -11px; padding: 8px 12px 10px; border-top: 1px solid var(--c-hair-3); background: var(--c-panel-2); cursor: default; touch-action: manipulation; }
+.card-approvals { margin: 9px -12px -11px; padding: 8px 12px 10px; border-top: 1px solid var(--c-hair-3); background: var(--c-panel-2); cursor: default; }
 .card-approvals-title { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--c-accent); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
 .card-approvals-title span { padding: 0 5px; border: 1px solid currentColor; font-size: 10.5px; line-height: 15px; }
 .card-approval { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; padding: 5px 0; }

@@ -73,16 +73,21 @@ describe("screen mockups", () => {
 });
 
 describe("walkthrough recordings", () => {
-  it("offers only the newest pending recording, labelled with its revision and caption", () => {
+  it("offers only the newest recording while it is pending, labelled with its revision and caption", () => {
     const result = pendingApprovals(item(), [
       recording("old", { revision: "1111111aaaa", created_at: "2026-11-01T00:00:00Z" }),
       recording("new", { revision: "2222222bbbb", caption: "Checkout flow", created_at: "2026-11-02T00:00:00Z" }),
-      recording("ok", { recording_review_status: "approved", created_at: "2026-11-03T00:00:00Z" }),
-      recording("no", { recording_review_status: "rejected", created_at: "2026-11-04T00:00:00Z" }),
     ], null);
     expect(result).toHaveLength(1);
     expect(result[0].kind === "recording" && result[0].asset.id).toBe("new");
     expect(approvalLabel(result[0])).toBe("Walkthrough · 2222222 · Checkout flow");
+  });
+
+  it("offers nothing when the newest recording is already reviewed", () => {
+    expect(pendingApprovals(item(), [
+      recording("old", { created_at: "2026-11-01T00:00:00Z" }),
+      recording("done", { recording_review_status: "approved", created_at: "2026-11-02T00:00:00Z" }),
+    ], null)).toEqual([]);
   });
 });
 
@@ -92,10 +97,9 @@ describe("decisions already made", () => {
     expect(pendingApprovals(item(), assets, OPEN, new Set(["home", "r1"]))).toEqual([]);
   });
 
-  it("falls back to the next pending recording once the newest is decided", () => {
+  it("never falls back to a superseded recording once the newest is decided", () => {
     const assets = [recording("a", { created_at: "2026-11-01T00:00:00Z" }), recording("b", { created_at: "2026-11-02T00:00:00Z" })];
-    const result = pendingApprovals(item(), assets, null, new Set(["b"]));
-    expect(result[0].kind === "recording" && result[0].asset.id).toBe("a");
+    expect(pendingApprovals(item(), assets, null, new Set(["b"]))).toEqual([]);
   });
 });
 
