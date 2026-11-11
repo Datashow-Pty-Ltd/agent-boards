@@ -18,3 +18,8 @@ The default stack is for trusted local development. Its PostgREST anonymous
 role has broad project access. Do not publish port 4747 to an untrusted network
 without authentication, authorization, tenant isolation, upload controls, and
 rate limiting.
+
+The Apple Container stack forwards a GitHub token to the repository-intelligence
+container. When `GITHUB_TOKEN` is unset it falls back to the GitHub CLI's
+credential, which is usually broader than indexing needs; export a read-only
+fine-grained token or set `AGENT_BOARDS_USE_GH_TOKEN=0`.

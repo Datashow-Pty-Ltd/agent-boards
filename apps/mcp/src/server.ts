@@ -511,7 +511,7 @@ function buildServer() {
         });
       }
       if (kind === "story" && typeof createdItem?.id === "string" && (designCardType || screenNames?.length)) {
-        return textResult(await rest("/rpc/set_design_card", {
+        created = await rest("/rpc/set_design_card", {
           method: "POST",
           body: JSON.stringify({
             target_work_item_id: createdItem.id,
@@ -519,14 +519,13 @@ function buildServer() {
             target_screen_names: screenNames ?? [],
             actor_name: "AI agent",
           }),
-        }));
+        });
       }
       if ((kind === "story" || kind === "feature") && visualEvidenceRequired && typeof createdItem?.id === "string") {
-        const updated = await rest("/rpc/set_visual_evidence_requirement", {
+        created = await rest("/rpc/set_visual_evidence_requirement", {
           method: "POST",
           body: JSON.stringify({ target_work_item_id: createdItem.id, required: true, actor_name: "AI agent" }),
         });
-        return textResult(updated);
       }
       return textResult(created);
     },
