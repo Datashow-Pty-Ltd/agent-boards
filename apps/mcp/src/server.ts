@@ -24,6 +24,7 @@ import { serverInstructions } from "./serverInstructions.js";
 import { registerBoardSettingsTool } from "./boardSettingsTool.js";
 import { registerOwnershipTools } from "./ownershipTools.js";
 import { registerWorkerIdentityTools } from "./workerIdentityTools.js";
+import { summarizeBoard } from "./boardSummary.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const app = express();
@@ -418,10 +419,13 @@ function buildServer() {
   server.registerTool(
     "get_board",
     {
-      description: "Get a project board, stages, cards, dependencies, and current telemetry.",
-      inputSchema: { projectId: z.string().uuid() },
+      description: "Get a project board: stages, card headers with each card's latest evidence per type, prerequisites, and telemetry. detail \"full\" adds every card field, all evidence rows, assets, delivery statuses and visual compliance, and can be very large.",
+      inputSchema: {
+        projectId: z.string().uuid(),
+        detail: z.enum(["summary", "full"]).default("summary"),
+      },
     },
-    async ({ projectId }) => {
+    async ({ projectId, detail }) => {
       const projects = (await rest(`/projects?id=eq.${projectId}`)) as Record<string, unknown>[];
       const boards = (await rest(`/boards?project_id=eq.${projectId}`)) as Record<string, unknown>[];
       const boardId = boards[0]?.id;
@@ -442,7 +446,8 @@ function buildServer() {
           rest(`/work_item_assets?project_id=eq.${projectId}&order=is_primary.desc,created_at.desc`),
         ])
         : [[], [], []];
-      return textResult({ project: projects[0], repository, board: boards[0], stages, items, dependencies, evidence, visualAssets, metrics, deliveryStatuses, visualCompliance });
+      const full = { project: projects[0], repository, board: boards[0], stages, items, dependencies, evidence, visualAssets, metrics, deliveryStatuses, visualCompliance };
+      return textResult(detail === "full" ? full : summarizeBoard(full));
     },
   );
 
@@ -490,7 +495,8 @@ function buildServer() {
         });
       const createdItem = Array.isArray(created) ? created[0] : null;
       if (requiredWorkerCapabilities?.length && typeof createdItem?.id === "string") {
-        await rest("/rpc/set_work_item_required_capabilities", {
+        // Return the row as saved, not the pre-update creation result.
+        created = await rest("/rpc/set_work_item_required_capabilities", {
           method: "POST",
           body: JSON.stringify({ target_work_item_id: createdItem.id, requested_capabilities: requiredWorkerCapabilities, actor_name: "AI agent" }),
         });
@@ -499,7 +505,7 @@ function buildServer() {
         created = await rest("/rpc/set_work_item_owner", { method: "POST", body: JSON.stringify({ target_work_item_id: createdItem.id, owner_name: owner, actor_name: "AI agent" }) });
       }
       if (kind === "story" && interactionEvidenceRequired && typeof createdItem?.id === "string") {
-        await rest("/rpc/set_interaction_evidence_requirement", {
+        created = await rest("/rpc/set_interaction_evidence_requirement", {
           method: "POST",
           body: JSON.stringify({ target_work_item_id: createdItem.id, required: true, actor_name: "AI agent" }),
         });

@@ -129,7 +129,7 @@ services:
       MCP_HOST: mcp
       INTELLIGENCE_HOST: intelligence
     ports:
-      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4173}:8080"
+      - "${AGENT_BOARDS_BIND:-127.0.0.1}:${AGENT_BOARDS_PORT:-4747}:8080"
     labels: *agent-boards-labels
 
 volumes:

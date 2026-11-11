@@ -3,6 +3,13 @@ set -eu
 
 ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 ACTION=${1:-up}
+
+# Same settings file as Docker Compose: load .env when present.
+if [ -f "$ROOT_DIR/.env" ]; then
+  set -a
+  . "$ROOT_DIR/.env"
+  set +a
+fi
 NETWORK=agent-boards-net
 VOLUME=agent-boards-postgres
 UPLOAD_VOLUME=agent-boards-uploads
@@ -13,7 +20,8 @@ INTELLIGENCE=agent-boards-repo-intelligence
 MCP=agent-boards-mcp
 WEB=agent-boards-web
 GATEWAY=agent-boards-gateway
-HOST_PORT=${AGENT_BOARDS_PORT:-4173}
+HOST_PORT=${AGENT_BOARDS_PORT:-4747}
+BIND_ADDRESS=${AGENT_BOARDS_BIND:-127.0.0.1}
 STACK_LABEL=com.datashow.application.stack=agent-boards
 DNS_DOMAIN=${AGENT_BOARDS_DNS_DOMAIN:-$(container system property list | awk '
   /^\[dns\]$/ { in_dns = 1; next }
@@ -25,6 +33,37 @@ if [ -z "$DNS_DOMAIN" ]; then
   echo "Apple Container has no DNS domain configured." >&2
   exit 1
 fi
+
+# Fails when another process already listens on the gateway port. A process
+# bound to 127.0.0.1 would otherwise silently shadow the gateway for local
+# clients such as MCP, which then see that process's 404s.
+check_port_free() {
+  command -v lsof >/dev/null 2>&1 || return 0
+  listeners=$(lsof -nP -iTCP:"$HOST_PORT" -sTCP:LISTEN 2>/dev/null | awk 'NR > 1 { print $1 " (pid " $2 ") " $9 }' | sort -u)
+  if [ -n "$listeners" ]; then
+    echo "Port ${HOST_PORT} is already in use:" >&2
+    echo "$listeners" >&2
+    echo "Stop that process or set AGENT_BOARDS_PORT to a free port." >&2
+    exit 1
+  fi
+}
+
+# Private repository indexing needs a GitHub token. Fall back to the GitHub
+# CLI's credential when GITHUB_TOKEN is not set; the value is never printed.
+resolve_github_token() {
+  if [ -z "${GITHUB_TOKEN:-}" ] && command -v gh >/dev/null 2>&1; then
+    GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
+    if [ -n "$GITHUB_TOKEN" ]; then
+      echo "Using the GitHub CLI credential for private repository indexing."
+    fi
+  fi
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    export GITHUB_TOKEN
+  else
+    unset GITHUB_TOKEN
+    echo "No GITHUB_TOKEN or GitHub CLI login found; only public repositories can be indexed."
+  fi
+}
 
 delete_containers() {
   for name in "$GATEWAY" "$WEB" "$MCP" "$INTELLIGENCE" "$REST" "$DB"; do
@@ -53,6 +92,8 @@ case "$ACTION" in
     container volume create -s 4G "$UPLOAD_VOLUME" >/dev/null 2>&1 || true
     container volume create -s 8G "$REPOSITORY_VOLUME" >/dev/null 2>&1 || true
     delete_containers
+    check_port_free
+    resolve_github_token
 
     build_images
 
@@ -119,7 +160,7 @@ case "$ACTION" in
     container run -d --name "$WEB" --label "$STACK_LABEL" --dns-domain "$DNS_DOMAIN" --network "$NETWORK,alias=web" \
       agent-boards-web:dev >/dev/null
     container run -d --name "$GATEWAY" --label "$STACK_LABEL" --dns-domain "$DNS_DOMAIN" --network "$NETWORK" \
-      --publish "${HOST_PORT}:8080" \
+      --publish "${BIND_ADDRESS}:${HOST_PORT}:8080" \
       --env WEB_HOST="web.${DNS_DOMAIN}" --env REST_HOST="postgrest.${DNS_DOMAIN}" \
       --env MCP_HOST="mcp.${DNS_DOMAIN}" --env INTELLIGENCE_HOST="intelligence.${DNS_DOMAIN}" \
       agent-boards-gateway:dev >/dev/null

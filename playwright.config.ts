@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: process.env.AGENT_BOARDS_URL ?? "http://127.0.0.1:4173",
+    baseURL: process.env.AGENT_BOARDS_URL ?? "http://127.0.0.1:4747",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

@@ -10,7 +10,7 @@ agent remains responsible for analysis, implementation, inspection, and testing.
 Codex / Claude / browser
           |
           v
-      OpenResty :4173
+      OpenResty :4747
        /    |    \
       /     |     \
  React  PostgREST  MCP ---- repository intelligence

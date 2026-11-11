@@ -15,6 +15,6 @@ seven days.
 ## Deployment warning
 
 The default stack is for trusted local development. Its PostgREST anonymous
-role has broad project access. Do not publish port 4173 to an untrusted network
+role has broad project access. Do not publish port 4747 to an untrusted network
 without authentication, authorization, tenant isolation, upload controls, and
 rate limiting.
