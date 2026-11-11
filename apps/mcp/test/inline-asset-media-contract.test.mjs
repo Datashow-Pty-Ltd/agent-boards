@@ -149,7 +149,7 @@ test('database refuses new inline media but leaves existing rows editable', () =
 
 test('database only accepts the upload URL derived from the row and preserves review state', () => {
   assert.match(migrationSource, /IF api\.inline_media_upload_url\(asset\.source_url\) IS DISTINCT FROM expected_source_url THEN/)
-  assert.match(migrationSource, /SET source_url = next_source, thumbnail_url = next_thumbnail\n/)
+  assert.match(migrationSource, /SET source_url = next_source, thumbnail_url = next_thumbnail\r?\n/)
   // The recording contract trigger fires only on asset_type or recording_manifest updates.
   assert.doesNotMatch(migrationSource, /recording_manifest|approval_status|recording_review_status\s*=/)
   assert.match(migrationSource, /CREATE OR REPLACE FUNCTION api\.card_image_url\(asset api\.work_item_assets\)/)
