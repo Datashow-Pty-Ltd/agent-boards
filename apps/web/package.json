@@ -31,7 +31,7 @@
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@fontsource/ibm-plex-sans": "5.3.0",
     "@fontsource/ibm-plex-serif": "5.3.0",
-    "@mantine/core": "9.4.2",
+    "@mantine/core": "9.7.5",
     "@mantine/hooks": "9.4.2",
     "@mantine/notifications": "9.4.2",
     "@nivo/funnel": "0.99.0",
