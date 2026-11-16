@@ -62,11 +62,11 @@ importers:
         specifier: 5.1.0
         version: 5.1.0
       tree-sitter:
-        specifier: 0.21.1
-        version: 0.21.1
+        specifier: 0.25.1
+        version: 0.25.1
       tree-sitter-typescript:
         specifier: 0.23.2
-        version: 0.23.2(tree-sitter@0.21.1)
+        version: 0.23.2(tree-sitter@0.25.1)
       zod:
         specifier: 4.6.6
         version: 4.6.6
@@ -2163,8 +2163,8 @@ packages:
       tree-sitter:
         optional: true
 
-  tree-sitter@0.21.1:
-    resolution: {integrity: sha512-7dxoA6kYvtgWw80265MyqJlkRl4yawIjO7S5MigytjELkX43fV2WsAXzsNfO7sBpPPCF5Gp0+XzHk0DwLCq3xQ==}
+  tree-sitter@0.25.1:
+    resolution: {integrity: sha512-mrcEdkYtHfrK1A6fs3O6FxkBo0Qig5XUXqHhxUOQu0bmPo00QF4XaSx4edpazdHwxnSCjlGKGgIqWdaN4dvTLA==}
 
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
@@ -4715,22 +4715,22 @@ snapshots:
 
   toidentifier@1.0.1: {}
 
-  tree-sitter-javascript@0.23.1(tree-sitter@0.21.1):
+  tree-sitter-javascript@0.23.1(tree-sitter@0.25.1):
     dependencies:
       node-addon-api: 8.9.2
       node-gyp-build: 4.8.4
     optionalDependencies:
-      tree-sitter: 0.21.1
+      tree-sitter: 0.25.1
 
-  tree-sitter-typescript@0.23.2(tree-sitter@0.21.1):
+  tree-sitter-typescript@0.23.2(tree-sitter@0.25.1):
     dependencies:
       node-addon-api: 8.9.2
       node-gyp-build: 4.8.4
-      tree-sitter-javascript: 0.23.1(tree-sitter@0.21.1)
+      tree-sitter-javascript: 0.23.1(tree-sitter@0.25.1)
     optionalDependencies:
-      tree-sitter: 0.21.1
+      tree-sitter: 0.25.1
 
-  tree-sitter@0.21.1:
+  tree-sitter@0.25.1:
     dependencies:
       node-addon-api: 8.9.2
       node-gyp-build: 4.8.4
